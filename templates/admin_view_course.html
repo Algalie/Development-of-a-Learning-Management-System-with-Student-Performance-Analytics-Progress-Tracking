@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ course.course_code }} - Course Details</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f7f9fc;
+            color: #1e293b;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: #0A2A66;
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(10, 42, 102, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: white;
+            border: 2px solid #FFC107;
+            box-shadow: 0 2px 10px rgba(255, 193, 7, 0.3);
+        }
+
+        .logo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .university-name {
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+
+        .university-name small {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            display: block;
+            font-weight: 400;
+        }
+
+        .welcome-section {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            color: white;
+        }
+
+        .welcome-text {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .welcome-text .greeting {
+            opacity: 0.8;
+        }
+
+        .welcome-text .user-name {
+            font-weight: 600;
+            color: #FFC107;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .role-badge {
+            background: #FFC107;
+            color: #0A2A66;
+            padding: 0.25rem 0.9rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 193, 7, 0.15);
+            border-color: #FFC107;
+            color: #FFC107;
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.3rem;
+            background: white;
+            color: #0A2A66;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .back-btn:hover {
+            background: #0A2A66;
+            color: white;
+            border-color: #0A2A66;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            color: #0A2A66;
+            font-weight: 700;
+        }
+
+        /* Monitor Note */
+        .monitor-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 14px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #1e40af;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.06);
+        }
+
+        .monitor-note i {
+            font-size: 1.5rem;
+            color: #3b82f6;
+        }
+
+        .monitor-note strong {
+            color: #0A2A66;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        /* Course Header */
+        .course-header {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f2f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .course-title h2 {
+            font-size: 1.8rem;
+            color: #0A2A66;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .course-title p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            letter-spacing: 0.2px;
+        }
+
+        .badge-draft {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .badge-finalized {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .badge-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .badge-archived {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* Course Info Grid */
+        .course-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f2f5;
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(10, 42, 102, 0.1);
+            border-color: #FFC107;
+        }
+
+        .info-card h3 {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .info-card h3 i {
+            color: #FFC107;
+            font-size: 0.85rem;
+        }
+
+        .info-card .value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0A2A66;
+        }
+
+        /* Grading Scale */
+        .grading-scale {
+            background: white;
+            border-radius: 16px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f0f2f5;
+        }
+
+        .scale-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .scale-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+        }
+
+        .scale-A { background: #10b981; }
+        .scale-B { background: #3b82f6; }
+        .scale-C { background: #f59e0b; }
+        .scale-D { background: #f97316; }
+        .scale-E { background: #8b5cf6; }
+        .scale-F { background: #ef4444; }
+
+        /* Section Tabs */
+        .section-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 0.75rem;
+        }
+
+        .tab {
+            padding: 0.6rem 1.4rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #475569;
+            background: white;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .tab:hover {
+            border-color: #FFC107;
+            color: #0A2A66;
+        }
+
+        .tab.active {
+            background: #0A2A66;
+            color: white;
+            border-color: #0A2A66;
+        }
+
+        /* Table Container */
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            overflow-x: auto;
+            border: 1px solid #f0f2f5;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            background: #f8fafc;
+            color: #0A2A66;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #eef2f6;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #eef2f6;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+
+        tr:hover td {
+            background: #fafbfc;
+        }
+
+        .student-name {
+            font-weight: 500;
+            color: #0A2A66;
+        }
+
+        .grade-cell {
+            font-weight: 700;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .grade-A { color: #10b981; }
+        .grade-B { color: #3b82f6; }
+        .grade-C { color: #f59e0b; }
+        .grade-D { color: #f97316; }
+        .grade-E { color: #8b5cf6; }
+        .grade-F { color: #ef4444; }
+
+        .display-grade {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .display-grade .new {
+            color: #10b981;
+        }
+
+        .display-grade .old {
+            color: #ef4444;
+        }
+
+        .reference-badge {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #0A2A66;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #FFC107;
+            color: #0A2A66;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 193, 7, 0.25);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #0A2A66;
+            color: #0A2A66;
+        }
+
+        .btn-outline:hover {
+            background: #0A2A66;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-bar {
+                flex-direction: column;
+                gap: 0.8rem;
+                padding: 1rem;
+            }
+
+            .top-bar-left {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .welcome-section {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .course-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .course-info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .course-info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grading-scale {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="logo-container">
+                <div class="logo-circle">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="University Logo">
+                </div>
+                <div class="university-name">
+                    Milton Margai Technical University
+                    <small>Exams Management & GPA Grading Portal</small>
+                </div>
+            </div>
+        </div>
+        <div class="welcome-section">
+            <div class="welcome-text">
+                <span class="greeting">Welcome,</span>
+                <span class="user-name">{{ full_name }}</span>
+            </div>
+            <div class="role-badge">
+                <i class="fas fa-shield-alt"></i>
+                {{ role|replace('_', ' ')|title }}
+            </div>
+            <a href="{{ url_for('admin.logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <a href="{{ url_for('admin.course_approvals') }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Approvals
+            </a>
+            <h1>Course Details</h1>
+        </div>
+
+        <!-- Monitor Note -->
+        <div class="monitor-note">
+            <i class="fas fa-eye"></i>
+            <div>
+                <strong>View Only:</strong> You are viewing this course as an administrator. Approval actions are handled by HOD, Dean, and Exam Office.
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {% if category == 'success' %}
+                            <i class="fas fa-circle-check"></i>
+                        {% else %}
+                            <i class="fas fa-circle-exclamation"></i>
+                        {% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Course Header -->
+        <div class="course-header">
+            <div class="course-title">
+                <h2>{{ course.course_code }}: {{ course.course_name }}</h2>
+                <p>Created on {{ course.created_at.strftime('%B %d, %Y') }} by {{ course.created_by.full_name }}</p>
+            </div>
+            <div>
+                {% if not course.is_active %}
+                    <span class="status-badge badge-archived">
+                        <i class="fas fa-archive"></i> Archived
+                    </span>
+                {% elif course.approval_status == 'finalized' %}
+                    <span class="status-badge badge-finalized">
+                        <i class="fas fa-check-circle"></i> Finalized
+                    </span>
+                {% elif course.approval_status == 'rejected' %}
+                    <span class="status-badge badge-rejected">
+                        <i class="fas fa-times-circle"></i> Rejected
+                    </span>
+                {% elif course.approval_status and course.approval_status.startswith('pending_') %}
+                    <span class="status-badge badge-pending">
+                        <i class="fas fa-clock"></i> {{ course.approval_status|replace('pending_','')|upper }} Approval
+                    </span>
+                {% else %}
+                    <span class="status-badge badge-draft">
+                        <i class="fas fa-pencil-alt"></i> Draft
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Course Info -->
+        <div class="course-info-grid">
+            <div class="info-card">
+                <h3><i class="fas fa-calendar-alt"></i> Semester</h3>
+                <div class="value">{{ course.semester }}</div>
+            </div>
+            <div class="info-card">
+                <h3><i class="fas fa-clock"></i> Credit Hours</h3>
+                <div class="value">{{ course.credit_hours }}</div>
+            </div>
+            <div class="info-card">
+                <h3><i class="fas fa-users"></i> Students</h3>
+                <div class="value">{{ students|length }}</div>
+            </div>
+            <div class="info-card">
+                <h3><i class="fas fa-building"></i> Department</h3>
+                <div class="value">{% if course.department %}{{ course.department.name }}{% elif course.faculty %}{{ course.faculty.name }}{% else %}<span style="color:#94a3b8;">N/A</span>{% endif %}</div>
+            </div>
+            <div class="info-card">
+                <h3><i class="fas fa-graduation-cap"></i> Program</h3>
+                <div class="value">{{ course.program_type }}</div>
+            </div>
+        </div>
+
+        <!-- Grading Scale -->
+        <div class="grading-scale">
+            <div class="scale-item"><div class="scale-color scale-A"></div> A (75-100) · 5.0</div>
+            <div class="scale-item"><div class="scale-color scale-B"></div> B (65-74) · 4.0</div>
+            <div class="scale-item"><div class="scale-color scale-C"></div> C (50-64) · 3.0</div>
+            <div class="scale-item"><div class="scale-color scale-D"></div> D (40-49) · 2.0</div>
+            <div class="scale-item"><div class="scale-color scale-E"></div> E (30-39) · 1.0 REF</div>
+            <div class="scale-item"><div class="scale-color scale-F"></div> F (0-29) · 0.0 REF</div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="section-tabs">
+            <span class="tab active" onclick="showTab('students')">
+                <i class="fas fa-user-graduate"></i> Students ({{ students|length }})
+            </span>
+            <span class="tab" onclick="showTab('assessments')">
+                <i class="fas fa-tasks"></i> Assessments ({{ assessments }})
+            </span>
+        </div>
+
+        <!-- Students Tab -->
+        <div id="students-tab" class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Test</th>
+                        <th>Assign</th>
+                        <th>Attend</th>
+                        <th>CA</th>
+                        <th>Exam</th>
+                        <th>Total</th>
+                        <th>Grade</th>
+                        <th>GP</th>
+                        <th>Ref</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td><strong>{{ student.student_id }}</strong></td>
+                        <td class="student-name">{{ student.student_name }}</td>
+                        <td>{{ student.test_score or '-' }}</td>
+                        <td>{{ student.assignment_score or '-' }}</td>
+                        <td>{{ student.attendance_score or '-' }}</td>
+                        <td>{{ "%.1f"|format(student.continuous_assessment) if student.continuous_assessment else '-' }}</td>
+                        <td>{{ student.exam_score or '-' }}</td>
+                        <td>{{ "%.1f"|format(student.total_score) if student.total_score else '-' }}</td>
+                        <td class="grade-cell grade-{{ student.grade if student.grade else 'F' }}">{{ student.grade or '-' }}</td>
+                        <td>{{ "%.1f"|format(student.grade_points) if student.grade_points else '-' }}</td>
+                        <td>
+                            {% set ref = course.reference_grades|selectattr('student_id','==',student.id)|first %}
+                            {% if ref and ref.display_grade %}
+                                <span class="display-grade">
+                                    <span class="new">{{ ref.display_grade.split('/')[0] }}</span>/<span class="old">{{ ref.display_grade.split('/')[1] }}</span>
+                                </span>
+                            {% elif student.grade in ['E','F'] %}
+                                <span class="reference-badge">RESIT</span>
+                            {% else %}
+                                <span style="color:#94a3b8;">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="11">
+                            <div class="empty-state">
+                                <i class="fas fa-user-slash"></i>
+                                <p>No students enrolled in this course</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Assessments Tab -->
+        <div id="assessments-tab" class="table-container" style="display:none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Max Score</th>
+                        <th>Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in course.assessments %}
+                    <tr>
+                        <td><strong>{{ a.assessment_name }}</strong></td>
+                        <td>{{ a.assessment_type|title }}</td>
+                        <td>{{ a.max_score }}</td>
+                        <td>{{ a.weight }}%</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state">
+                                <i class="fas fa-clipboard-list"></i>
+                                <p>No assessments added for this course</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="{{ url_for('admin.course_approvals') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Course Approvals
+            </a>
+            <a href="{{ url_for('admin.exam_office_submissions') }}" class="btn btn-primary">
+                <i class="fas fa-clipboard-check"></i> Exam Office Submissions
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tab) {
+            document.getElementById('students-tab').style.display = tab === 'students' ? 'block' : 'none';
+            document.getElementById('assessments-tab').style.display = tab === 'assessments' ? 'block' : 'none';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.closest('.tab').classList.add('active');
+        }
+    </script>
+</body>
+</html>

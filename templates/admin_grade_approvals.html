@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Approvals - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f7f9fc;
+            color: #1e293b;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: #0A2A66;
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(10, 42, 102, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: white;
+            border: 2px solid #FFC107;
+            box-shadow: 0 2px 10px rgba(255, 193, 7, 0.3);
+        }
+
+        .logo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .university-name {
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+
+        .university-name small {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            display: block;
+            font-weight: 400;
+        }
+
+        .welcome-section {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            color: white;
+        }
+
+        .welcome-text {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .welcome-text .greeting {
+            opacity: 0.8;
+        }
+
+        .welcome-text .user-name {
+            font-weight: 600;
+            color: #FFC107;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .role-badge {
+            background: #FFC107;
+            color: #0A2A66;
+            padding: 0.25rem 0.9rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 193, 7, 0.15);
+            border-color: #FFC107;
+            color: #FFC107;
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.3rem;
+            background: white;
+            color: #0A2A66;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .back-btn:hover {
+            background: #0A2A66;
+            color: white;
+            border-color: #0A2A66;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            color: #0A2A66;
+            font-weight: 700;
+        }
+
+        .page-header p {
+            color: #64748b;
+            margin-top: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        /* Monitor Note */
+        .monitor-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 14px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #1e40af;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.06);
+        }
+
+        .monitor-note i {
+            font-size: 1.5rem;
+            color: #3b82f6;
+        }
+
+        .monitor-note strong {
+            color: #0A2A66;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.3rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f2f5;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(10, 42, 102, 0.1);
+            border-color: #FFC107;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0A2A66;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .stat-label i {
+            font-size: 0.85rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 0.6rem 1.4rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #475569;
+            background: white;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .tab:hover {
+            border-color: #FFC107;
+            color: #0A2A66;
+        }
+
+        .tab.active {
+            background: #0A2A66;
+            color: white;
+            border-color: #0A2A66;
+        }
+
+        /* Table Container */
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f2f5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            background: #f8fafc;
+            color: #0A2A66;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #eef2f6;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #eef2f6;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+
+        tr:hover td {
+            background: #fafbfc;
+        }
+
+        /* Type Badges */
+        .type-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .type-ca {
+            background: #7c3aed;
+            color: white;
+        }
+
+        .type-exam {
+            background: #10b981;
+            color: white;
+        }
+
+        .type-reference {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        .status-finalized {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Action Button */
+        .btn-sm {
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-decoration: none;
+            background: #0A2A66;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-sm:hover {
+            background: #FFC107;
+            color: #0A2A66;
+            transform: translateY(-1px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-bar {
+                flex-direction: column;
+                gap: 0.8rem;
+                padding: 1rem;
+            }
+
+            .top-bar-left {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .welcome-section {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .monitor-note {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="logo-container">
+                <div class="logo-circle">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="University Logo">
+                </div>
+                <div class="university-name">
+                    Milton Margai Technical University
+                    <small>Exams Management & GPA Grading Portal</small>
+                </div>
+            </div>
+        </div>
+        <div class="welcome-section">
+            <div class="welcome-text">
+                <span class="greeting">Welcome,</span>
+                <span class="user-name">{{ full_name }}</span>
+            </div>
+            <div class="role-badge">
+                <i class="fas fa-shield-alt"></i>
+                {{ role|replace('_', ' ')|title }}
+            </div>
+            <a href="{{ url_for('admin.logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <a href="{{ url_for('admin.dashboard') }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+            <div>
+                <h1>Grade Approvals</h1>
+                <p>Monitor CA, Exam, and Reference submissions (View Only)</p>
+            </div>
+        </div>
+
+        <!-- Monitor Note -->
+        <div class="monitor-note">
+            <i class="fas fa-eye"></i>
+            <div>
+                <strong>Monitoring Only:</strong> You can view all grade submissions. Approval/rejection is handled by HOD, Dean, and Exam Officer.
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.pending_ca }}</div>
+                <div class="stat-label">
+                    <i class="fas fa-clock" style="color: #7c3aed;"></i> Pending CA
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.pending_exam }}</div>
+                <div class="stat-label">
+                    <i class="fas fa-clock" style="color: #10b981;"></i> Pending Exam
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.pending_references }}</div>
+                <div class="stat-label">
+                    <i class="fas fa-clock" style="color: #ef4444;"></i> Pending References
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.approved_ca }}</div>
+                <div class="stat-label">
+                    <i class="fas fa-check-circle" style="color: #7c3aed;"></i> Approved CA
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.approved_exam }}</div>
+                <div class="stat-label">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i> Approved Exam
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.rejected }}</div>
+                <div class="stat-label">
+                    <i class="fas fa-times-circle" style="color: #ef4444;"></i> Rejected
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <span class="tab active" onclick="showTab('ca')">
+                <i class="fas fa-calculator"></i> CA Submissions
+            </span>
+            <span class="tab" onclick="showTab('exam')">
+                <i class="fas fa-file-alt"></i> Exam Submissions
+            </span>
+            <span class="tab" onclick="showTab('reference')">
+                <i class="fas fa-sync-alt"></i> Reference Submissions
+            </span>
+            <span class="tab" onclick="showTab('rejected')">
+                <i class="fas fa-times-circle"></i> Rejected
+            </span>
+        </div>
+
+        <!-- CA Tab -->
+        <div id="ca-tab" class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Creator</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in ca_approvals %}
+                    <tr>
+                        <td>
+                            <strong>{{ req.course.course_code }}</strong><br>
+                            <small style="color:#64748b;">{{ req.course.course_name }}</small>
+                        </td>
+                        <td>{{ req.creator.full_name }}</td>
+                        <td>
+                            <span class="status-badge {% if req.status == 'finalized' %}status-finalized{% elif req.status == 'rejected' %}status-rejected{% else %}status-pending{% endif %}">
+                                {% if req.status == 'finalized' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% elif req.status == 'rejected' %}
+                                    <i class="fas fa-times-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-clock"></i>
+                                {% endif %}
+                                {{ req.get_status_display() }}
+                            </span>
+                        </td>
+                        <td>{{ req.submitted_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.view_submission', request_id=req.id) }}" class="btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fas fa-calculator"></i>
+                                <p>No CA submissions found</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Exam Tab -->
+        <div id="exam-tab" class="table-container" style="display:none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Creator</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in exam_approvals %}
+                    <tr>
+                        <td>
+                            <strong>{{ req.course.course_code }}</strong><br>
+                            <small style="color:#64748b;">{{ req.course.course_name }}</small>
+                        </td>
+                        <td>{{ req.creator.full_name }}</td>
+                        <td>
+                            <span class="status-badge {% if req.status == 'finalized' %}status-finalized{% elif req.status == 'rejected' %}status-rejected{% else %}status-pending{% endif %}">
+                                {% if req.status == 'finalized' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% elif req.status == 'rejected' %}
+                                    <i class="fas fa-times-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-clock"></i>
+                                {% endif %}
+                                {{ req.get_status_display() }}
+                            </span>
+                        </td>
+                        <td>{{ req.submitted_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.view_submission', request_id=req.id) }}" class="btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fas fa-file-alt"></i>
+                                <p>No exam submissions found</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Reference Tab -->
+        <div id="reference-tab" class="table-container" style="display:none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Creator</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in reference_approvals %}
+                    <tr>
+                        <td>
+                            <strong>{{ req.course.course_code }}</strong><br>
+                            <small style="color:#64748b;">{{ req.course.course_name }}</small>
+                        </td>
+                        <td>{{ req.creator.full_name }}</td>
+                        <td>
+                            <span class="status-badge {% if req.status == 'finalized' %}status-finalized{% elif req.status == 'rejected' %}status-rejected{% else %}status-pending{% endif %}">
+                                {% if req.status == 'finalized' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% elif req.status == 'rejected' %}
+                                    <i class="fas fa-times-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-clock"></i>
+                                {% endif %}
+                                {{ req.get_status_display() }}
+                            </span>
+                        </td>
+                        <td>{{ req.submitted_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.view_submission', request_id=req.id) }}" class="btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fas fa-sync-alt"></i>
+                                <p>No reference submissions found</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Rejected Tab -->
+        <div id="rejected-tab" class="table-container" style="display:none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Course</th>
+                        <th>Creator</th>
+                        <th>Rejected</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in rejected_approvals %}
+                    <tr>
+                        <td>
+                            <span class="type-badge type-{{ req.submission_type }}">
+                                {{ req.submission_type|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong>{{ req.course.course_code }}</strong><br>
+                            <small style="color:#64748b;">{{ req.course.course_name }}</small>
+                        </td>
+                        <td>{{ req.creator.full_name }}</td>
+                        <td>{{ req.rejected_at.strftime('%Y-%m-%d') if req.rejected_at else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.view_submission', request_id=req.id) }}" class="btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                                <p>No rejected submissions found</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            ['ca', 'exam', 'reference', 'rejected'].forEach(tab => {
+                document.getElementById(tab + '-tab').style.display = tab === tabName ? 'block' : 'none';
+            });
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.closest('.tab').classList.add('active');
+        }
+    </script>
+</body>
+</html>

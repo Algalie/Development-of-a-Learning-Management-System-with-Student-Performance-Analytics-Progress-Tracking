@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Exam Grades - {{ course.course_code }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        body { background: #f7f9fc; color: #1e293b; }
+        .top-bar { background: #0A2A66; padding: 0.75rem 2rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(10,42,102,0.2); position: sticky; top: 0; z-index: 100; }
+        .top-bar-left { display: flex; align-items: center; gap: 1.2rem; }
+        .logo-container { display: flex; align-items: center; gap: 0.8rem; }
+        .logo-circle { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; background: white; border: 2px solid #FFC107; box-shadow: 0 2px 10px rgba(255,193,7,0.3); }
+        .logo-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .university-name { color: white; font-weight: 600; font-size: 1rem; line-height: 1.3; }
+        .university-name small { font-size: 0.7rem; opacity: 0.7; display: block; font-weight: 400; }
+        .welcome-section { display: flex; align-items: center; gap: 1.2rem; color: white; }
+        .welcome-text { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+        .welcome-text .greeting { opacity: 0.8; }
+        .welcome-text .user-name { font-weight: 600; color: #FFC107; background: rgba(255,255,255,0.1); padding: 0.25rem 0.75rem; border-radius: 30px; border: 1px solid rgba(255,193,7,0.3); }
+        .role-badge { background: #FFC107; color: #0A2A66; padding: 0.25rem 0.9rem; border-radius: 30px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.3rem; }
+        .logout-btn { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.08); color: white; text-decoration: none; padding: 0.5rem 1.2rem; border-radius: 30px; font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease; border: 1px solid rgba(255,193,7,0.2); }
+        .logout-btn:hover { background: rgba(255,193,7,0.15); border-color: #FFC107; color: #FFC107; }
+        .dashboard-container { max-width: 1300px; margin: 2rem auto; padding: 0 2rem; }
+        .page-header { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .back-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.3rem; background: white; color: #0A2A66; text-decoration: none; border-radius: 30px; font-weight: 500; font-size: 0.9rem; border: 1px solid #e2e8f0; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .back-btn:hover { background: #0A2A66; color: white; border-color: #0A2A66; }
+        .page-header h1 { font-size: 1.8rem; color: #0A2A66; font-weight: 700; }
+        .course-info { background: white; border-radius: 18px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.06); border: 1px solid #f0f2f5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .course-info h2 { font-size: 1.3rem; color: #0A2A66; margin-bottom: 0.25rem; }
+        .course-info p { color: #64748b; font-size: 0.9rem; }
+        .grade-summary { display: flex; gap: 2rem; }
+        .summary-item { text-align: center; }
+        .summary-value { font-size: 1.5rem; font-weight: 700; color: #0A2A66; }
+        .summary-label { font-size: 0.8rem; color: #64748b; }
+        .grading-scale { background: white; border-radius: 14px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; display: flex; gap: 1.5rem; flex-wrap: wrap; box-shadow: 0 3px 10px rgba(0,0,0,0.04); border: 1px solid #f0f2f5; }
+        .scale-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 500; color: #475569; }
+        .scale-color { width: 16px; height: 16px; border-radius: 4px; }
+        .scale-A { background: #10b981; } .scale-B { background: #3b82f6; } .scale-C { background: #f59e0b; }
+        .scale-D { background: #f97316; } .scale-E { background: #8b5cf6; } .scale-F { background: #ef4444; }
+        .table-container { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.06); overflow-x: auto; border: 1px solid #f0f2f5; margin-bottom: 1.5rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 1rem; background: #f8fafc; color: #0A2A66; font-weight: 600; font-size: 0.85rem; border-bottom: 2px solid #eef2f6; white-space: nowrap; }
+        td { padding: 1rem; border-bottom: 1px solid #eef2f6; font-size: 0.9rem; color: #334155; }
+        tr:hover td { background: #fafbfc; }
+        .student-name { font-weight: 600; color: #0A2A66; }
+        .student-id { font-size: 0.85rem; color: #64748b; }
+        .grade-input { width: 80px; padding: 0.5rem; border: 1.5px solid #e2e8f0; border-radius: 10px; text-align: center; font-size: 0.9rem; background: #f8fafc; transition: all 0.3s ease; }
+        .grade-input:focus { outline: none; border-color: #FFC107; background: white; box-shadow: 0 0 0 3px rgba(255,193,7,0.1); }
+        .exam-input { background: #FFF8E1; border-color: #FFC107; }
+        .calculated-field { font-weight: 700; text-align: center; }
+        .total-cell { color: #0A2A66; }
+        .grade-badge { display: inline-block; padding: 0.3rem 0.7rem; border-radius: 20px; font-weight: 700; font-size: 0.85rem; text-align: center; min-width: 45px; }
+        .grade-A { background: #d1fae5; color: #065f46; } .grade-B { background: #dbeafe; color: #1e40af; }
+        .grade-C { background: #fef3c7; color: #92400e; } .grade-D { background: #ffedd5; color: #9a3412; }
+        .grade-E { background: #ede9fe; color: #5b21b6; } .grade-F { background: #fee2e2; color: #991b1b; }
+        .reference-alert { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 0.75rem 1rem; border-radius: 10px; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+        .reference-alert i { color: #ef4444; }
+        .reference-row { background: #fffbf0; }
+        .reference-badge { background: #fee2e2; color: #991b1b; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-left: 0.5rem; border: 1px solid #fca5a5; }
+        .action-buttons { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; flex-wrap: wrap; }
+        .btn { padding: 0.75rem 2rem; border-radius: 30px; font-size: 0.9rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease; }
+        .btn-primary { background: #0A2A66; color: white; }
+        .btn-primary:hover { background: #FFC107; color: #0A2A66; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,193,7,0.25); }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; transform: translateY(-2px); }
+        .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        @media (max-width: 768px) { .course-info { flex-direction: column; text-align: center; } .grading-scale { flex-direction: column; gap: 0.5rem; } .action-buttons { flex-direction: column; } .btn { width: 100%; justify-content: center; } }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="logo-container"><div class="logo-circle"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></div><div class="university-name">Milton Margai Technical University<small>Exams Management & GPA Grading Portal</small></div></div>
+        </div>
+        <div class="welcome-section">
+            <div class="welcome-text"><span class="greeting">Welcome,</span><span class="user-name">{{ full_name }}</span></div>
+            <div class="role-badge"><i class="fas fa-chalkboard-teacher"></i> {{ role|replace('_', ' ')|title }}</div>
+            <a href="{{ url_for('lecturer.logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="page-header">
+            <a href="{{ url_for('lecturer.view_course', course_id=course.id) }}" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Course</a>
+            <h1>Enter Exam Grades</h1>
+        </div>
+
+        <div class="course-info">
+            <div><h2>{{ course.course_code }}: {{ course.course_name }}</h2><p>{{ course.semester }} | {{ course.academic_year }} | {{ course.credit_hours }} Credits</p></div>
+            <div class="grade-summary"><div class="summary-item"><div class="summary-value">{{ students|length }}</div><div class="summary-label">Students</div></div></div>
+        </div>
+
+        <div class="grading-scale">
+            <div class="scale-item"><div class="scale-color scale-A"></div>A (75-100) · 5.0</div>
+            <div class="scale-item"><div class="scale-color scale-B"></div>B (65-74) · 4.0</div>
+            <div class="scale-item"><div class="scale-color scale-C"></div>C (50-64) · 3.0</div>
+            <div class="scale-item"><div class="scale-color scale-D"></div>D (40-49) · 2.0</div>
+            <div class="scale-item"><div class="scale-color scale-E"></div>E (30-39) · 1.0 REF</div>
+            <div class="scale-item"><div class="scale-color scale-F"></div>F (0-29) · 0.0 REF</div>
+        </div>
+
+        <form method="POST" action="{{ url_for('lecturer.enter_exam_grades', course_id=course.id) }}" id="gradeForm">
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Student</th><th>CA (40)</th><th>Exam (60)</th><th>Total</th><th>Grade</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for student in students %}
+                        {% set is_reference = student.grade in ['E', 'F'] %}
+                        <tr class="{% if is_reference %}reference-row{% endif %}" id="row-{{ student.id }}">
+                            <td><div class="student-name">{{ student.student_name }}</div><div class="student-id">{{ student.student_id }}</div>{% if is_reference %}<span class="reference-badge">REFERENCE</span>{% endif %}</td>
+                            <td class="calculated-field">{{ "%.1f"|format(student.continuous_assessment) if student.continuous_assessment else '0.0' }}</td>
+                            <td><input type="number" class="grade-input exam-input" name="exam_{{ student.id }}" value="{{ student.exam_score if student.exam_score else '' }}" min="0" max="60" step="0.5" onchange="updateStudentGrade({{ student.id }}, {{ student.continuous_assessment or 0 }})" data-student="{{ student.id }}" {% if student.exam_approved %}disabled{% endif %}></td>
+                            <td class="calculated-field total-cell" id="total_{{ student.id }}">{{ "%.1f"|format(student.total_score) if student.total_score else '0.0' }}</td>
+                            <td><span class="grade-badge grade-{{ student.grade if student.grade else 'F' }}" id="grade_{{ student.id }}">{{ student.grade if student.grade else '-' }}</span></td>
+                            <td><div id="alert_{{ student.id }}"></div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="action-buttons">
+                <button type="button" class="btn btn-secondary" onclick="calculateAllGrades()"><i class="fas fa-calculator"></i> Preview Grades</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Save All Grades</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function calculateGrade(total) { if (total >= 75) return { grade: 'A', points: 5.0 }; if (total >= 65) return { grade: 'B', points: 4.0 }; if (total >= 50) return { grade: 'C', points: 3.0 }; if (total >= 40) return { grade: 'D', points: 2.0 }; if (total >= 30) return { grade: 'E', points: 1.0 }; return { grade: 'F', points: 0.0 }; }
+        function updateStudentGrade(studentId, caScore) {
+            const examScore = parseFloat(document.querySelector(`input[name="exam_${studentId}"]`)?.value) || 0;
+            const total = caScore + examScore;
+            document.getElementById(`total_${studentId}`).textContent = total.toFixed(1);
+            const { grade } = calculateGrade(total);
+            const gs = document.getElementById(`grade_${studentId}`); gs.textContent = grade; gs.className = `grade-badge grade-${grade}`;
+            const ad = document.getElementById(`alert_${studentId}`);
+            if (grade === 'E' || grade === 'F') { ad.innerHTML = `<div class="reference-alert"><i class="fas fa-exclamation-triangle"></i><span><strong>REFERENCE REQUIRED:</strong> Grade ${grade} (${total.toFixed(1)}%). Student needs a resit.</span></div>`; document.getElementById(`row-${studentId}`).style.background = '#fffbf0'; }
+            else { ad.innerHTML = ''; document.getElementById(`row-${studentId}`).style.background = ''; }
+        }
+        function calculateAllGrades() { [{% for s in students %}{ id: {{ s.id }}, ca: {{ s.continuous_assessment or 0 }} },{% endfor %}].forEach(s => updateStudentGrade(s.id, s.ca)); }
+        document.addEventListener('DOMContentLoaded', calculateAllGrades);
+    </script>
+</body>
+</html>

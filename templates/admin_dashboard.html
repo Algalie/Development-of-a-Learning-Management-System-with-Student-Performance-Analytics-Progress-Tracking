@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Milton Margai Technical University</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f7f9fc;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: #0A2A66;
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(10, 42, 102, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: white;
+            border: 2px solid #FFC107;
+            box-shadow: 0 2px 10px rgba(255, 193, 7, 0.3);
+        }
+
+        .logo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .university-name {
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+
+        .university-name small {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            display: block;
+            font-weight: 400;
+        }
+
+        .welcome-section {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            color: white;
+        }
+
+        .welcome-text {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .welcome-text .greeting {
+            opacity: 0.8;
+        }
+
+        .welcome-text .user-name {
+            font-weight: 600;
+            color: #FFC107;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .role-badge {
+            background: #FFC107;
+            color: #0A2A66;
+            padding: 0.25rem 0.9rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 193, 7, 0.15);
+            border-color: #FFC107;
+            color: #FFC107;
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0A2A66;
+            margin-bottom: 0.25rem;
+        }
+
+        .page-header p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        /* Notification Bar */
+        .notif-bar {
+            background: #FFF8E1;
+            border: 1px solid #FFC107;
+            border-radius: 14px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .notif-bar .notif-icon {
+            font-size: 1.5rem;
+            color: #f59e0b;
+        }
+
+        .notif-bar .notif-text strong {
+            color: #92400e;
+        }
+
+        .notif-bar .notif-text p {
+            color: #92400e;
+            font-size: 0.85rem;
+        }
+
+        .notif-bar a {
+            background: #FFC107;
+            color: #0A2A66;
+            padding: 0.5rem 1.25rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .notif-bar a:hover {
+            background: #f5b800;
+            transform: translateY(-1px);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.3rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            border: 1px solid #f0f2f5;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(10, 42, 102, 0.12);
+            border-color: #FFC107;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: white;
+        }
+
+        .stat-icon.blue { background: #0A2A66; }
+        .stat-icon.gold { background: #FFC107; color: #0A2A66; }
+        .stat-icon.purple { background: #7c3aed; }
+        .stat-icon.green { background: #10b981; }
+        .stat-icon.indigo { background: #6366f1; }
+        .stat-icon.orange { background: #f59e0b; }
+
+        .stat-info h3 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0A2A66;
+            line-height: 1.2;
+        }
+
+        .stat-info p {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: 0.2rem;
+        }
+
+        /* Section Title */
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #0A2A66;
+        }
+
+        /* Actions Grid */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.75rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0A2A66, #FFC107);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(10, 42, 102, 0.12);
+            border-color: transparent;
+        }
+
+        .action-card:hover::before {
+            opacity: 1;
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            background: #FFF8E1;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #0A2A66;
+            margin-bottom: 1.2rem;
+            border: 1px solid #FFC107;
+            transition: all 0.3s ease;
+        }
+
+        .action-card:hover .action-icon {
+            background: #0A2A66;
+            color: #FFC107;
+            border-color: #FFC107;
+        }
+
+        .action-card h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #0A2A66;
+            margin-bottom: 0.5rem;
+        }
+
+        .action-card p {
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1.2rem;
+            flex-grow: 1;
+        }
+
+        .action-features {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .action-features li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #475569;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .action-features i {
+            color: #FFC107;
+            font-size: 0.7rem;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #0A2A66;
+            color: white;
+            text-decoration: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+            align-self: flex-start;
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            background: #FFC107;
+            color: #0A2A66;
+            transform: translateX(4px);
+        }
+
+        /* Approval Card */
+        .approval-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.75rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f2f5;
+            transition: all 0.3s ease;
+        }
+
+        .approval-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(10, 42, 102, 0.12);
+            border-color: #FFC107;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: #FFF8E1;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #0A2A66;
+            border: 1px solid #FFC107;
+        }
+
+        .card-title h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0A2A66;
+            margin-bottom: 0.2rem;
+        }
+
+        .card-title p {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.7rem 1.4rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #0A2A66;
+            color: white;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .btn-primary:hover {
+            background: #FFC107;
+            color: #0A2A66;
+            transform: translateY(-2px);
+        }
+
+        .badge {
+            background: #ef4444;
+            color: white;
+            padding: 0.25rem 0.7rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .btn-sm {
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* Footer Stats */
+        .footer-stats {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 1.5rem;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .footer-stats span {
+            color: #64748b;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-stats i {
+            color: #FFC107;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-bar {
+                flex-direction: column;
+                gap: 0.8rem;
+                padding: 1rem;
+            }
+
+            .top-bar-left {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .welcome-section {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .notif-bar {
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" style="max-width: 1400px; margin: 1rem auto 0; padding: 1rem 2rem;">
+                    {% if category == 'success' %}
+                        <i class="fas fa-circle-check"></i>
+                    {% else %}
+                        <i class="fas fa-circle-exclamation"></i>
+                    {% endif %}
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="logo-container">
+                <div class="logo-circle">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="University Logo">
+                </div>
+                <div class="university-name">
+                    Milton Margai Technical University
+                    <small>Exams Management & GPA Grading Portal</small>
+                </div>
+            </div>
+        </div>
+        <div class="welcome-section">
+            <div class="welcome-text">
+                <span class="greeting">Welcome back,</span>
+                <span class="user-name">{{ full_name }}</span>
+            </div>
+            <div class="role-badge">
+                <i class="fas fa-shield-alt"></i>
+                {{ role|replace('_', ' ')|title }}
+            </div>
+            <a href="{{ url_for('admin.logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Admin Dashboard</h1>
+            <p>Manage your university system from one central location</p>
+        </div>
+
+        <!-- Notification Bar -->
+        {% if stats.unread_notifications and stats.unread_notifications > 0 %}
+        <div class="notif-bar">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fas fa-bell notif-icon"></i>
+                <div class="notif-text">
+                    <strong>You have {{ stats.unread_notifications }} unread notification(s)</strong>
+                    <p>Check your notifications for updates on submissions</p>
+                </div>
+            </div>
+            <a href="{{ url_for('admin.notifications') }}"><i class="fas fa-envelope"></i> View Notifications</a>
+        </div>
+        {% endif %}
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-user-shield"></i></div>
+                <div class="stat-info"><h3>{{ stats.total_admins }}</h3><p>Administrators</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon gold"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div class="stat-info"><h3>{{ stats.total_lecturers }}</h3><p>Lecturers</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-users"></i></div>
+                <div class="stat-info"><h3>{{ stats.total_students or 850 }}</h3><p>Students</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-building"></i></div>
+                <div class="stat-info"><h3>{{ stats.total_faculties or 0 }}</h3><p>Faculties</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon indigo"><i class="fas fa-sitemap"></i></div>
+                <div class="stat-info"><h3>{{ stats.total_departments or 0 }}</h3><p>Departments</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-eye"></i></div>
+                <div class="stat-info"><h3>{{ stats.pending_at_exam or 0 }}</h3><p>Pending at Exam Office</p></div>
+            </div>
+        </div>
+
+        <!-- Management Tools Section -->
+        <div class="section-title"><h2>Management Tools</h2></div>
+
+        <div class="actions-grid">
+            <!-- Course Approvals Card -->
+            <div class="approval-card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fas fa-book"></i></div>
+                    <div class="card-title">
+                        <h3>Course Approvals</h3>
+                        <p>Monitor course submissions at Exam Office</p>
+                    </div>
+                </div>
+                <div class="card-actions" style="display: flex; justify-content: space-between; align-items: center;">
+                    <a href="{{ url_for('admin.course_approvals') }}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> View Courses
+                    </a>
+                    {% if stats.pending_courses_at_exam and stats.pending_courses_at_exam > 0 %}
+                    <span class="badge">
+                        {{ stats.pending_courses_at_exam }} pending
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Grade Approvals Card -->
+            <div class="approval-card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="card-title">
+                        <h3>Grade Approvals</h3>
+                        <p>CA, Exam & Reference at Exam Office</p>
+                    </div>
+                </div>
+                <div class="card-actions" style="display: flex; justify-content: space-between; align-items: center;">
+                    <a href="{{ url_for('admin.admin_grade_approvals') }}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> View Grades
+                    </a>
+                    {% if stats.pending_grades_at_exam and stats.pending_grades_at_exam > 0 %}
+                    <span class="badge">
+                        {{ stats.pending_grades_at_exam }} pending
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Exam Office Submissions Card -->
+            <div class="action-card" onclick="window.location.href='{{ url_for('admin.exam_office_submissions') }}'">
+                <div class="action-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h3>Exam Office Submissions</h3>
+                <p>View and process all submissions awaiting final approval</p>
+                <div style="display: flex; gap: 1rem; margin: 1rem 0;">
+                    <div style="text-align: center; flex: 1;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;">{{ stats.pending_at_exam or 0 }}</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">Pending</div>
+                    </div>
+                    <div style="text-align: center; flex: 1;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">{{ stats.finalized_today or 0 }}</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">Today</div>
+                    </div>
+                    <div style="text-align: center; flex: 1;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #ef4444;">{{ stats.rejected_count or 0 }}</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">Rejected</div>
+                    </div>
+                </div>
+                <div class="action-btn">
+                    Process Submissions <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+
+            <!-- Reference Management Card -->
+            <div class="action-card" onclick="window.location.href='{{ url_for('admin.reference_management') }}'">
+                <div class="action-icon"><i class="fas fa-sync-alt"></i></div>
+                <h3>Reference Management</h3>
+                <p>Query and manage student references by student ID</p>
+                <div style="display: flex; gap: 1rem; margin: 1rem 0;">
+                    <div style="text-align: center; flex: 1;"><div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;">{{ stats.pending_ref_status or 0 }}</div><div style="font-size: 0.8rem; color: #64748b;">Pending</div></div>
+                    <div style="text-align: center; flex: 1;"><div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">{{ stats.cleared_references or 0 }}</div><div style="font-size: 0.8rem; color: #64748b;">Cleared</div></div>
+                    <div style="text-align: center; flex: 1;"><div style="font-size: 1.5rem; font-weight: 700; color: #ef4444;">{{ stats.double_failures or 0 }}</div><div style="font-size: 0.8rem; color: #64748b;">Double Fail</div></div>
+                </div>
+                <div class="action-btn">Manage References <i class="fas fa-arrow-right"></i></div>
+            </div>
+
+            <!-- User & Faculty Management Card -->
+            <div class="action-card" onclick="window.location.href='{{ url_for('admin.manage_users') }}'">
+                <div class="action-icon"><i class="fas fa-users-cog"></i></div>
+                <h3>User & Faculty Management</h3>
+                <p>Manage administrators, lecturers, faculties and departments</p>
+                <ul class="action-features">
+                    <li><i class="fas fa-check-circle"></i> Add New Administrators</li>
+                    <li><i class="fas fa-check-circle"></i> Add New Lecturers</li>
+                    <li><i class="fas fa-check-circle"></i> Manage Faculties & Departments</li>
+                </ul>
+                <div class="action-btn">Manage Users <i class="fas fa-arrow-right"></i></div>
+            </div>
+
+            <!-- Faculty Structure Card -->
+            <div class="action-card" onclick="window.location.href='{{ url_for('admin.faculty_management') }}'">
+                <div class="action-icon"><i class="fas fa-university"></i></div>
+                <h3>Faculty Structure</h3>
+                <p>Create and manage academic faculties and their departments</p>
+                <ul class="action-features">
+                    <li><i class="fas fa-check-circle"></i> Add Faculties</li>
+                    <li><i class="fas fa-check-circle"></i> Add Departments</li>
+                    <li><i class="fas fa-check-circle"></i> Organize Academic Structure</li>
+                </ul>
+                <div class="action-btn">Manage Structure <i class="fas fa-arrow-right"></i></div>
+            </div>
+
+            <!-- GPA Calculator Card -->
+            <div class="action-card" onclick="window.location.href='{{ url_for('admin.gpa_calculator') }}'">
+                <div class="action-icon"><i class="fas fa-calculator"></i></div>
+                <h3>GPA Calculator</h3>
+                <p>Calculate student GPA by ID, level, and semester with historical tracking</p>
+                <ul class="action-features">
+                    <li><i class="fas fa-check-circle"></i> Auto-detects pending references</li>
+                    <li><i class="fas fa-check-circle"></i> Applies credit hour penalty for references</li>
+                    <li><i class="fas fa-check-circle"></i> Shows student status (PASS/FAIL/WITHDREW)</li>
+                </ul>
+                <div class="action-btn">Open GPA Calculator <i class="fas fa-arrow-right"></i></div>
+            </div>
+
+            <!-- Transcript Management Card -->
+            <div class="action-card" onclick="window.location.href='{{ url_for('admin.transcript') }}'">
+                <div class="action-icon"><i class="fas fa-file-alt"></i></div>
+                <h3>Transcript Management</h3>
+                <p>View student academic history and generate transcripts. Also query department student lists.</p>
+                <div class="action-btn">Manage Transcripts <i class="fas fa-arrow-right"></i></div>
+            </div>
+
+            <!-- Failure History Card -->
+            <div class="action-card" onclick="window.location.href='{{ url_for('admin.failure_history') }}'">
+                <div class="action-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3>Failure & Withdrawal History</h3>
+                <p>View failure and withdrawal records for students</p>
+                <ul class="action-features">
+                    <li><i class="fas fa-check-circle"></i> Search by student ID</li>
+                    <li><i class="fas fa-check-circle"></i> View failure history</li>
+                    <li><i class="fas fa-check-circle"></i> Delete student records</li>
+                </ul>
+                <div class="action-btn">View History <i class="fas fa-arrow-right"></i></div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Footer -->
+        <div class="footer-stats">
+            <span>
+                <i class="fas fa-clock"></i> 
+                Last login: {{ now().strftime('%Y-%m-%d %H:%M') }}
+            </span>
+            <span>
+                <i class="fas fa-check-circle" style="color: #10b981;"></i> 
+                Finalized today: {{ stats.finalized_today or 0 }}
+            </span>
+            <span>
+                <i class="fas fa-times-circle" style="color: #ef4444;"></i> 
+                Rejected: {{ stats.rejected_count or 0 }}
+            </span>
+        </div>
+    </div>
+</body>
+</html>

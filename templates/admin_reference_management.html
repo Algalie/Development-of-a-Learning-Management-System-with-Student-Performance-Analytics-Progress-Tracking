@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reference Management - Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f7f9fc;
+            color: #1e293b;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: #0A2A66;
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(10, 42, 102, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: white;
+            border: 2px solid #FFC107;
+            box-shadow: 0 2px 10px rgba(255, 193, 7, 0.3);
+        }
+
+        .logo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .university-name {
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+
+        .university-name small {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            display: block;
+            font-weight: 400;
+        }
+
+        .welcome-section {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            color: white;
+        }
+
+        .welcome-text {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .welcome-text .greeting {
+            opacity: 0.8;
+        }
+
+        .welcome-text .user-name {
+            font-weight: 600;
+            color: #FFC107;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .role-badge {
+            background: #FFC107;
+            color: #0A2A66;
+            padding: 0.25rem 0.9rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 193, 7, 0.15);
+            border-color: #FFC107;
+            color: #FFC107;
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.3rem;
+            background: white;
+            color: #0A2A66;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .back-btn:hover {
+            background: #0A2A66;
+            color: white;
+            border-color: #0A2A66;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            color: #0A2A66;
+            font-weight: 700;
+        }
+
+        /* Query Section */
+        .query-section {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f2f5;
+        }
+
+        .query-title {
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            font-size: 1.1rem;
+            color: #0A2A66;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .query-title i {
+            color: #FFC107;
+        }
+
+        .query-form {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .query-form .form-group {
+            flex: 2;
+            min-width: 200px;
+        }
+
+        .query-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #0A2A66;
+            font-size: 0.85rem;
+        }
+
+        .query-form input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .query-form input:focus {
+            outline: none;
+            border-color: #FFC107;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
+        }
+
+        .query-form input::placeholder {
+            color: #cbd5e1;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #0A2A66;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #FFC107;
+            color: #0A2A66;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 193, 7, 0.25);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #0A2A66;
+            color: #0A2A66;
+        }
+
+        .btn-outline:hover {
+            background: #0A2A66;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Warning Box */
+        .warning-box {
+            background: #fffbeb;
+            border-left: 5px solid #f59e0b;
+            border-top: 1px solid #fde68a;
+            border-right: 1px solid #fde68a;
+            border-bottom: 1px solid #fde68a;
+            padding: 1.2rem 1.5rem;
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+        }
+
+        .warning-title {
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .warning-title i {
+            color: #f59e0b;
+        }
+
+        .warning-box p {
+            color: #92400e;
+            font-size: 0.9rem;
+        }
+
+        /* Student Card */
+        .student-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f2f5;
+        }
+
+        .student-card h3 {
+            color: #0A2A66;
+            margin-bottom: 1.2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .student-card h3 i {
+            color: #FFC107;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .info-item {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #0A2A66;
+            min-width: 100px;
+        }
+
+        .info-value {
+            color: #334155;
+            font-weight: 500;
+        }
+
+        /* Table Container */
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+            overflow-x: auto;
+            border: 1px solid #f0f2f5;
+            margin-bottom: 2rem;
+        }
+
+        .table-container h3 {
+            color: #0A2A66;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .table-container h3 i {
+            color: #FFC107;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            background: #f8fafc;
+            color: #0A2A66;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #eef2f6;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #eef2f6;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+
+        tr:hover td {
+            background: #fafbfc;
+        }
+
+        /* Grade Badges */
+        .grade-badge {
+            display: inline-block;
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .grade-A { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .grade-B { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .grade-C { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .grade-D { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+        .grade-E { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+        .grade-F { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .status-cleared {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .status-double {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Display Grade */
+        .display-grade {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .display-grade .new {
+            color: #10b981;
+        }
+
+        .display-grade .old {
+            color: #ef4444;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-bar {
+                flex-direction: column;
+                gap: 0.8rem;
+                padding: 1rem;
+            }
+
+            .top-bar-left {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .welcome-section {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .query-form {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="logo-container">
+                <div class="logo-circle">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="University Logo">
+                </div>
+                <div class="university-name">
+                    Milton Margai Technical University
+                    <small>Exams Management & GPA Grading Portal</small>
+                </div>
+            </div>
+        </div>
+        <div class="welcome-section">
+            <div class="welcome-text">
+                <span class="greeting">Welcome,</span>
+                <span class="user-name">{{ full_name }}</span>
+            </div>
+            <div class="role-badge">
+                <i class="fas fa-shield-alt"></i>
+                {{ role|replace('_', ' ')|title }}
+            </div>
+            <a href="{{ url_for('admin.logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <a href="{{ url_for('admin.dashboard') }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+            <h1>Reference Management</h1>
+        </div>
+
+        <!-- Query by Student ID -->
+        <div class="query-section">
+            <div class="query-title">
+                <i class="fas fa-id-card"></i> Search Student References
+            </div>
+            <form method="GET" action="{{ url_for('admin.reference_management') }}" class="query-form">
+                <div class="form-group">
+                    <label>Student ID</label>
+                    <input type="text" name="student_id" value="{{ student_id_search or '' }}" placeholder="Enter student ID">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="{{ url_for('admin.reference_management') }}" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </form>
+        </div>
+
+        {% if student_info %}
+            <!-- Pending Reference Warning -->
+            {% if has_pending %}
+            <div class="warning-box">
+                <div class="warning-title">
+                    <i class="fas fa-exclamation-triangle"></i> Pending References
+                </div>
+                <p>This student has pending reference(s) that have not been cleared. GPA calculation is blocked until resolved.</p>
+            </div>
+            {% endif %}
+
+            <!-- Student Information Card -->
+            <div class="student-card">
+                <h3><i class="fas fa-user-graduate"></i> Student Details</h3>
+                <div class="info-grid">
+                    <div class="info-item"><span class="info-label">Student ID:</span><span class="info-value">{{ student_info.id }}</span></div>
+                    <div class="info-item"><span class="info-label">Name:</span><span class="info-value">{{ student_info.name }}</span></div>
+                    <div class="info-item"><span class="info-label">Program:</span><span class="info-value">{{ student_info.program or 'N/A' }}</span></div>
+                    <div class="info-item"><span class="info-label">Department:</span><span class="info-value">{{ student_info.department or 'N/A' }}</span></div>
+                    <div class="info-item"><span class="info-label">Level:</span><span class="info-value">{{ student_info.level or 'N/A' }}</span></div>
+                    <div class="info-item"><span class="info-label">Semester:</span><span class="info-value">{{ student_info.semester or 'N/A' }}</span></div>
+                    <div class="info-item"><span class="info-label">Academic Year:</span><span class="info-value">{{ student_info.academic_year or 'N/A' }}</span></div>
+                </div>
+            </div>
+
+            <!-- References Table -->
+            <div class="table-container">
+                <h3><i class="fas fa-sync-alt"></i> Reference Records</h3>
+                {% if references %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Academic Year</th>
+                            <th>Semester</th>
+                            <th>Original Grade</th>
+                            <th>Reference Grade</th>
+                            <th>Display Grade</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ref in references %}
+                        <tr>
+                            <td><strong>{{ ref.course_code }}</strong><br><small style="color:#64748b;">{{ ref.course_name }}</small></td>
+                            <td>{{ ref.academic_year }}</td>
+                            <td>{{ ref.semester }}</td>
+                            <td>
+                                <span class="grade-badge grade-{{ ref.original_grade }}">{{ ref.original_grade }}</span>
+                                <small style="color:#64748b;"> ({{ ref.original_score }}%)</small>
+                            </td>
+                            <td>
+                                {% if ref.reference_grade %}
+                                    <span class="grade-badge grade-{{ ref.reference_grade }}">{{ ref.reference_grade }}</span>
+                                    <small style="color:#64748b;"> ({{ ref.reference_score }}%)</small>
+                                {% else %}
+                                    <span class="status-badge status-pending">Not entered</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ref.display_grade %}
+                                    <span class="display-grade"><span class="new">{{ ref.display_grade.split('/')[0] }}</span>/<span class="old">{{ ref.display_grade.split('/')[1] }}</span></span>
+                                {% else %}
+                                    <span style="color:#94a3b8;">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ref.reference_status == 'cleared' %}
+                                    <span class="status-badge status-cleared">
+                                        <i class="fas fa-check-circle"></i> Cleared
+                                    </span>
+                                {% elif ref.reference_status == 'double_fail' %}
+                                    <span class="status-badge status-double">
+                                        <i class="fas fa-times-circle"></i> Double Fail
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-pending">
+                                        <i class="fas fa-clock"></i> Pending
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No reference records found for this student.</p>
+                </div>
+                {% endif %}
+            </div>
+        {% elif student_id_search %}
+            <div class="empty-state">
+                <i class="fas fa-user-slash"></i>
+                <p>Student not found. Please check the ID and try again.</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

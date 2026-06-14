@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPA Calculator - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        body { background: #f7f9fc; color: #1e293b; }
+        .top-bar { background: #0A2A66; padding: 0.75rem 2rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(10,42,102,0.2); position: sticky; top: 0; z-index: 100; }
+        .top-bar-left { display: flex; align-items: center; gap: 1.2rem; }
+        .logo-container { display: flex; align-items: center; gap: 0.8rem; }
+        .logo-circle { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; background: white; border: 2px solid #FFC107; box-shadow: 0 2px 10px rgba(255,193,7,0.3); }
+        .logo-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .university-name { color: white; font-weight: 600; font-size: 1rem; line-height: 1.3; }
+        .university-name small { font-size: 0.7rem; opacity: 0.7; display: block; font-weight: 400; }
+        .welcome-section { display: flex; align-items: center; gap: 1.2rem; color: white; }
+        .welcome-text { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+        .welcome-text .greeting { opacity: 0.8; }
+        .welcome-text .user-name { font-weight: 600; color: #FFC107; background: rgba(255,255,255,0.1); padding: 0.25rem 0.75rem; border-radius: 30px; border: 1px solid rgba(255,193,7,0.3); }
+        .role-badge { background: #FFC107; color: #0A2A66; padding: 0.25rem 0.9rem; border-radius: 30px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.3rem; }
+        .logout-btn { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.08); color: white; text-decoration: none; padding: 0.5rem 1.2rem; border-radius: 30px; font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease; border: 1px solid rgba(255,193,7,0.2); }
+        .logout-btn:hover { background: rgba(255,193,7,0.15); border-color: #FFC107; color: #FFC107; }
+        .dashboard-container { max-width: 950px; margin: 2rem auto; padding: 0 2rem; }
+        .page-header { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .back-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.3rem; background: white; color: #0A2A66; text-decoration: none; border-radius: 30px; font-weight: 500; font-size: 0.9rem; border: 1px solid #e2e8f0; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .back-btn:hover { background: #0A2A66; color: white; border-color: #0A2A66; }
+        .page-header h1 { font-size: 1.8rem; color: #0A2A66; font-weight: 700; }
+        .card { background: white; border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.06); border: 1px solid #f0f2f5; }
+        .card h3 { color: #0A2A66; margin-bottom: 1.5rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h3 i { color: #FFC107; }
+        .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .form-group label { font-weight: 600; color: #0A2A66; font-size: 0.85rem; }
+        .form-group input, .form-group select { padding: 0.7rem; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 0.9rem; font-family: 'Inter', sans-serif; background: #f8fafc; transition: all 0.3s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #FFC107; background: white; box-shadow: 0 0 0 3px rgba(255,193,7,0.1); }
+        .btn { padding: 0.7rem 1.5rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease; text-decoration: none; }
+        .btn-primary { background: #0A2A66; color: white; }
+        .btn-primary:hover { background: #FFC107; color: #0A2A66; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,193,7,0.25); }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; transform: translateY(-2px); }
+        .btn-disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; opacity: 0.6; }
+        .loading { text-align: center; padding: 2rem; display: none; }
+        .loading i { font-size: 2rem; color: #0A2A66; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .warning-box { padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; display: none; }
+        .warning-box.pending-ref { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
+        .warning-box.double-fail { background: #fef2f2; border-left: 4px solid #ef4444; color: #991b1b; }
+        .warning-box .warning-title { font-weight: 600; margin-bottom: 0.25rem; font-size: 1rem; }
+        .warning-box .warning-detail { font-size: 0.9rem; line-height: 1.5; }
+        .student-info { background: #eff6ff; border: 1px solid #bfdbfe; padding: 1rem 1.25rem; border-radius: 14px; margin-bottom: 1.5rem; display: none; align-items: center; justify-content: space-between; }
+        .student-info .name { font-weight: 700; color: #0A2A66; font-size: 1.1rem; }
+        .student-info .detail { color: #64748b; font-size: 0.85rem; }
+        .student-badge { background: #0A2A66; color: white; padding: 0.3rem 1rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; }
+        .previous-semesters { background: #f8fafc; border-radius: 14px; padding: 1rem 1.2rem; margin-bottom: 1.5rem; display: none; border: 1px solid #eef2f6; }
+        .previous-semesters h4 { color: #0A2A66; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .semester-chip { display: inline-block; background: white; padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.85rem; margin-right: 0.5rem; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; }
+        .semester-chip span { font-weight: 700; color: #0A2A66; }
+        .grades-section { display: none; }
+        .table-container { overflow-x: auto; margin-bottom: 1rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 0.75rem 1rem; background: #f8fafc; color: #0A2A66; font-weight: 600; font-size: 0.85rem; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 0.75rem 1rem; border-bottom: 1px solid #eef2f6; font-size: 0.9rem; }
+        tr:hover td { background: #fafbfc; }
+        .grade-normal { font-weight: 600; }
+        .grade-A { color: #10b981; } .grade-B { color: #3b82f6; } .grade-C { color: #f59e0b; }
+        .grade-D { color: #f97316; } .grade-E { color: #8b5cf6; } .grade-F { color: #ef4444; }
+        .combined-grade { font-weight: 600; font-size: 0.95rem; }
+        .combined-grade .new-grade { color: #10b981; font-weight: 700; font-size: 1.05rem; }
+        .combined-grade .old-grade { color: #ef4444; font-size: 0.85rem; }
+        .grade-double-fail { color: #ef4444; font-weight: 700; }
+        .grade-pending { color: #f59e0b; font-weight: 600; }
+        .credit-display { font-size: 0.85rem; }
+        .credit-penalty { display: block; font-size: 0.7rem; color: #f59e0b; font-weight: 500; }
+        .totals-display { text-align: right; padding: 1rem; background: #f8fafc; border-radius: 10px; margin-top: 1rem; font-weight: 500; }
+        .result-section { display: none; margin-top: 1.5rem; }
+        .result-box { background: white; border: 1px solid #f0f2f5; border-radius: 18px; padding: 2rem; text-align: center; margin-bottom: 1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.06); }
+        .result-box .label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+        .result-box .value { font-size: 3rem; font-weight: 700; }
+        .result-box .formula { font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem; }
+        .result-box.pass .value { color: #10b981; }
+        .result-box.fail .value { color: #ef4444; }
+        .result-box.withdrew .value { color: #f59e0b; }
+        .status-badge { display: inline-block; padding: 0.3rem 1rem; border-radius: 30px; font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem; }
+        .status-pass { background: #d1fae5; color: #065f46; }
+        .status-fail { background: #fee2e2; color: #991b1b; }
+        .status-withdrew { background: #fef3c7; color: #92400e; }
+        .action-row { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
+        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; } .btn { width: 100%; justify-content: center; } .student-info { flex-direction: column; gap: 0.5rem; text-align: center; } }
+        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="logo-container"><div class="logo-circle"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></div><div class="university-name">Milton Margai Technical University<small>Exams Management & GPA Grading Portal</small></div></div>
+        </div>
+        <div class="welcome-section">
+            <div class="welcome-text"><span class="greeting">Welcome,</span><span class="user-name">{{ full_name }}</span></div>
+            <div class="role-badge"><i class="fas fa-shield-alt"></i> {{ role|replace('_', ' ')|title }}</div>
+            <a href="{{ url_for('admin.logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="page-header">
+            <a href="{{ url_for('admin.dashboard') }}" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <h1>GPA Calculator</h1>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-search"></i> Student Information</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Student ID</label><input type="text" id="studentId" placeholder="e.g., 7626" value="{{ prefill.student_id if prefill else '' }}"></div>
+                <div class="form-group"><label>Academic Year</label><select id="academicYear"><option value="">Select</option><option>2023/2024</option><option>2024/2025</option><option>2025/2026</option><option>2026/2027</option></select></div>
+                <div class="form-group"><label>Level</label><select id="level"><option value="">Select</option><option>Level 100</option><option>Level 200</option><option>Level 300</option><option>Level 400</option></select></div>
+                <div class="form-group"><label>Semester</label><select id="semester"><option value="">Select</option><option>Semester 1</option><option>Semester 2</option></select></div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" onclick="fetchGrades()"><i class="fas fa-search"></i> Retrieve Grades</button></div>
+        </div>
+
+        <div id="loading" class="loading"><i class="fas fa-spinner"></i><p>Loading grades...</p></div>
+
+        <div id="studentInfo" class="student-info"><div><div class="name" id="studentName"></div><div class="detail" id="studentDetail"></div></div><div class="student-badge" id="studentBadge"></div></div>
+        <div id="previousSemesters" class="previous-semesters"><h4>Previous Semesters:</h4><div id="semesterList"></div></div>
+
+        <div id="warningPending" class="warning-box pending-ref"><div class="warning-title"><i class="fas fa-exclamation-triangle"></i> Pending References Found</div><div class="warning-detail">This student has pending references for: <span style="font-weight:600;" id="pendingCourses"></span>.<br><strong>GPA cannot be calculated</strong> until these references are cleared.</div></div>
+        <div id="warningDoubleFail" class="warning-box double-fail"><div class="warning-title"><i class="fas fa-times-circle"></i> Double Reference Failure</div><div class="warning-detail">This student has a double reference in: <span style="font-weight:600;" id="doubleFailCourses"></span>.<br>Student fails this module. These courses receive 0 grade points.</div></div>
+
+        <div id="gradesSection" class="grades-section">
+            <div class="card">
+                <h3>Current Semester Grades</h3>
+                <div class="table-container"><table><thead><tr><th>Course</th><th>Credits</th><th>Score</th><th>Grade</th><th>Points</th></tr></thead><tbody id="gradesBody"></tbody></table></div>
+                <div id="totalsDisplay" class="totals-display"></div>
+                <div class="action-row"><button id="calculateBtn" class="btn btn-success" onclick="calculateAndSave()"><i class="fas fa-calculator"></i> Calculate & Save GPA</button></div>
+            </div>
+        </div>
+
+        <div id="resultSection" class="result-section">
+            <div class="result-box" id="semesterResult"><div class="label">Semester GPA</div><div class="value" id="semesterGPA">0.00</div><div class="formula" id="gpaFormula"></div><div id="semesterStatus"></div></div>
+            <div class="result-box" id="cumulativeResult" style="margin-top:1rem;"><div class="label" id="cumulativeLabel">Cumulative GPA</div><div class="value" id="cumulativeGPA">0.00</div><div class="formula" id="cumulativeFormula"></div></div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = { studentId: '', studentName: '', academicYear: '', level: '', semester: '', grades: [], previousGPAs: [], hasPending: false, hasDoubleFail: false };
+        async function fetchGrades() {
+            const studentId = document.getElementById('studentId').value.trim(), academicYear = document.getElementById('academicYear').value, level = document.getElementById('level').value, semester = document.getElementById('semester').value;
+            if (!studentId || !academicYear || !level || !semester) { alert('All fields are required'); return; }
+            document.getElementById('loading').style.display = 'block';
+            ['studentInfo','previousSemesters','gradesSection','resultSection','warningPending','warningDoubleFail'].forEach(id=>document.getElementById(id).style.display='none');
+            try {
+                const res = await fetch('/admin/api/student-grades', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ student_id: studentId, academic_year: academicYear, level, semester }) });
+                const data = await res.json(); if (!res.ok) throw new Error(data.error);
+                currentData = { studentId, studentName: data.student_name, academicYear, level, semester, grades: data.current_grades || [], previousGPAs: data.previous_semesters || [], hasPending: data.has_pending_references || false, hasDoubleFail: data.has_double_fail || false };
+                document.getElementById('studentName').innerText = data.student_name;
+                document.getElementById('studentDetail').innerText = `${level} - ${semester} (${academicYear})`;
+                document.getElementById('studentBadge').innerText = studentId;
+                document.getElementById('studentInfo').style.display = 'flex';
+                let disableCalc = false;
+                if (currentData.hasDoubleFail) { document.getElementById('doubleFailCourses').innerText = data.double_fail_courses.join(', '); document.getElementById('warningDoubleFail').style.display = 'block'; disableCalc = true; }
+                if (currentData.hasPending) { document.getElementById('pendingCourses').innerText = data.pending_reference_courses.join(', '); document.getElementById('warningPending').style.display = 'block'; disableCalc = true; }
+                const calcBtn = document.getElementById('calculateBtn');
+                if (disableCalc) { calcBtn.disabled = true; calcBtn.classList.add('btn-disabled'); } else { calcBtn.disabled = false; calcBtn.classList.remove('btn-disabled'); }
+                displayPreviousSemesters(data.previous_semesters);
+                displayGrades(data.current_grades);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('gradesSection').style.display = 'block';
+            } catch (err) { alert('Error: ' + err.message); document.getElementById('loading').style.display = 'none'; }
+        }
+        function displayPreviousSemesters(prev) {
+            const c = document.getElementById('semesterList'); c.innerHTML = '';
+            if (!prev || prev.length === 0) { document.getElementById('previousSemesters').style.display = 'none'; return; }
+            prev.forEach(g => { const chip = document.createElement('span'); chip.className = 'semester-chip'; chip.innerHTML = `${g.level} ${g.semester} (${g.academic_year}): <span>GPA ${g.gpa.toFixed(2)}</span>`; c.appendChild(chip); });
+            document.getElementById('previousSemesters').style.display = 'block';
+        }
+        function displayGrades(grades) {
+            const tbody = document.getElementById('gradesBody'); tbody.innerHTML = '';
+            if (!grades || grades.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#64748b;">No grades found</td></tr>'; return; }
+            let tc = 0, tp = 0;
+            grades.forEach(g => {
+                const cu = g.effective_credit_hours || g.credit_hours; tc += cu; tp += cu * g.grade_points;
+                let gd = '', cd = `${g.credit_hours}`;
+                if (g.has_double_fail) { gd = `<span class="grade-double-fail">DOUBLE FAIL</span>`; if (g.display_grade) { const parts = g.display_grade.split('/'); gd += `<br><small style="color:#ef4444;">(${parts[0]}/${parts[1]})</small>`; } }
+                else if (g.has_cleared_reference) { if (g.display_grade) { const parts = g.display_grade.split('/'); gd = `<span class="combined-grade"><span class="new-grade">${parts[0]}</span> / <span class="old-grade">${parts[1]}</span></span>`; } else { gd = `<span class="grade-normal grade-${g.grade}">${g.grade || '-'}</span>`; } cd = `${g.credit_hours} → <strong style="color:#f59e0b;">${g.effective_credit_hours}</strong>`; cd += `<span class="credit-penalty">(×2 penalty)</span>`; }
+                else if (g.has_pending_reference) { gd = `<span class="grade-pending">⏳ Pending</span>`; }
+                else { gd = `<span class="grade-normal grade-${g.grade}">${g.grade || '-'}</span>`; }
+                tbody.insertAdjacentHTML('beforeend', `<tr><td><strong>${g.course_code}</strong><br><small style="color:#64748b;">${g.course_name}</small></td><td><div class="credit-display">${cd}</div></td><td>${g.score ? g.score.toFixed(1) : '-'}</td><td>${gd}</td><td style="font-weight:600;">${g.grade_points.toFixed(1)}</td></tr>`);
+            });
+            document.getElementById('totalsDisplay').innerHTML = `<strong>Total Credits:</strong> ${tc} | <strong>Total Points:</strong> ${tp.toFixed(2)}`;
+        }
+        async function calculateAndSave() {
+            if (currentData.hasDoubleFail) { alert('Cannot calculate - double fail reference exists.'); return; }
+            if (currentData.hasPending) { alert('Cannot calculate - pending references exist.'); return; }
+            if (!currentData.grades || currentData.grades.length === 0) { alert('No grades to calculate'); return; }
+            let tc = 0, tp = 0;
+            currentData.grades.forEach(g => { const cu = g.effective_credit_hours || g.credit_hours; tc += cu; tp += cu * g.grade_points; });
+            const sgpa = tc ? tp / tc : 0;
+            let ss, sc;
+            if (sgpa >= 3.0) { ss = 'PASS'; sc = 'pass'; } else if (sgpa >= 2.7) { ss = 'FAIL'; sc = 'fail'; } else { ss = 'WITHDREW'; sc = 'withdrew'; }
+            const fp = currentData.grades.map(g => `${g.effective_credit_hours || g.credit_hours}×${g.grade_points.toFixed(1)}`).join(' + ');
+            document.getElementById('semesterGPA').innerText = sgpa.toFixed(2);
+            document.getElementById('gpaFormula').innerText = `${fp} = ${tp.toFixed(2)} ÷ ${tc} = ${sgpa.toFixed(2)}`;
+            let cgpa = sgpa, cf = 'First semester GPA equals current GPA.';
+            if (currentData.semester === 'Semester 2') { const prev = currentData.previousGPAs.find(p => p.level === currentData.level && p.semester === 'Semester 1'); if (prev) { cgpa = (prev.gpa + sgpa) / 2; cf = `(${prev.gpa.toFixed(2)} + ${sgpa.toFixed(2)}) ÷ 2 = ${cgpa.toFixed(2)}`; } else { cf = 'No Semester 1 GPA found.'; } }
+            document.getElementById('cumulativeGPA').innerText = cgpa.toFixed(2);
+            document.getElementById('cumulativeFormula').innerText = cf;
+            document.getElementById('cumulativeLabel').innerText = currentData.semester === 'Semester 2' ? `${currentData.level} Final GPA` : `${currentData.level} First Semester GPA`;
+            document.getElementById('semesterStatus').innerHTML = `<span class="status-badge status-${ss.toLowerCase()}">${ss}</span>`;
+            document.getElementById('semesterResult').className = `result-box ${sc}`;
+            document.getElementById('resultSection').style.display = 'block';
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+            try {
+                const res = await fetch('/admin/api/calculate-student-gpa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ student_id: currentData.studentId, student_name: currentData.studentName, level: currentData.level, semester: currentData.semester, academic_year: currentData.academicYear, grades: currentData.grades, previous_gpas: currentData.previousGPAs }) });
+                const data = await res.json(); if (!res.ok) throw new Error(data.error);
+            } catch (err) { console.error('Save error:', err); }
+        }
+    </script>
+</body>
+</html>

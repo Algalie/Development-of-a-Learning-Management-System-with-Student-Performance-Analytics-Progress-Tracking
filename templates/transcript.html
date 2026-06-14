@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcript Management - Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        body { background: #f7f9fc; color: #1e293b; }
+        .top-bar { background: #0A2A66; padding: 0.75rem 2rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(10,42,102,0.2); position: sticky; top: 0; z-index: 100; }
+        .top-bar-left { display: flex; align-items: center; gap: 1.2rem; }
+        .logo-container { display: flex; align-items: center; gap: 0.8rem; }
+        .logo-circle { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; background: white; border: 2px solid #FFC107; box-shadow: 0 2px 10px rgba(255,193,7,0.3); }
+        .logo-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .university-name { color: white; font-weight: 600; font-size: 1rem; line-height: 1.3; }
+        .university-name small { font-size: 0.7rem; opacity: 0.7; display: block; font-weight: 400; }
+        .welcome-section { display: flex; align-items: center; gap: 1.2rem; color: white; }
+        .welcome-text { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+        .welcome-text .greeting { opacity: 0.8; }
+        .welcome-text .user-name { font-weight: 600; color: #FFC107; background: rgba(255,255,255,0.1); padding: 0.25rem 0.75rem; border-radius: 30px; border: 1px solid rgba(255,193,7,0.3); }
+        .role-badge { background: #FFC107; color: #0A2A66; padding: 0.25rem 0.9rem; border-radius: 30px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.3rem; }
+        .logout-btn { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.08); color: white; text-decoration: none; padding: 0.5rem 1.2rem; border-radius: 30px; font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease; border: 1px solid rgba(255,193,7,0.2); }
+        .logout-btn:hover { background: rgba(255,193,7,0.15); border-color: #FFC107; color: #FFC107; }
+        .dashboard-container { max-width: 1300px; margin: 2rem auto; padding: 0 2rem; }
+        .page-header { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .back-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.3rem; background: white; color: #0A2A66; text-decoration: none; border-radius: 30px; font-weight: 500; font-size: 0.9rem; border: 1px solid #e2e8f0; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .back-btn:hover { background: #0A2A66; color: white; border-color: #0A2A66; }
+        .page-header h1 { font-size: 1.8rem; color: #0A2A66; font-weight: 700; }
+        .card { background: white; border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.06); border: 1px solid #f0f2f5; }
+        .card h2 { color: #0A2A66; margin-bottom: 1rem; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h2 i { color: #FFC107; }
+        .form-row { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 180px; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #0A2A66; font-size: 0.85rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.7rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 0.9rem; background: #f8fafc; transition: all 0.3s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #FFC107; background: white; box-shadow: 0 0 0 3px rgba(255,193,7,0.1); }
+        .btn { padding: 0.7rem 1.5rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease; text-decoration: none; }
+        .btn-primary { background: #0A2A66; color: white; }
+        .btn-primary:hover { background: #FFC107; color: #0A2A66; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,193,7,0.25); }
+        .btn-outline { background: transparent; border: 2px solid #0A2A66; color: #0A2A66; }
+        .btn-outline:hover { background: #0A2A66; color: white; transform: translateY(-2px); }
+        .semester-block { border: 1px solid #f0f2f5; border-radius: 14px; margin-bottom: 1rem; overflow: hidden; }
+        .semester-header { background: #f8fafc; padding: 1rem 1.2rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.3s; }
+        .semester-header:hover { background: #f0f2f5; }
+        .semester-header h3 { font-size: 1rem; color: #0A2A66; }
+        .semester-details { padding: 1rem; border-top: 1px solid #f0f2f5; display: none; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid #eef2f6; font-size: 0.9rem; }
+        th { background: #f8fafc; color: #0A2A66; font-weight: 600; }
+        .badge-status { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+        .badge-pass { background: #d1fae5; color: #065f46; } .badge-fail { background: #fee2e2; color: #991b1b; }
+        .badge-withdrew { background: #fef3c7; color: #92400e; } .badge-double-fail { background: #fee2e2; color: #991b1b; }
+        .badge-pending { background: #e2e8f0; color: #475569; } .badge-promoted { background: #d1fae5; color: #065f46; }
+        .badge-repeat { background: #fef3c7; color: #92400e; } .badge-reference-cleared { background: #d1fae5; color: #065f46; }
+        .badge-reference-pending { background: #fef3c7; color: #92400e; } .badge-no-reference { background: #f1f5f9; color: #475569; }
+        .warning-box { background: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem 1.2rem; border-radius: 12px; margin-bottom: 1.5rem; }
+        .warning-box .warning-title { font-weight: 600; margin-bottom: 0.25rem; color: #991b1b; }
+        .empty-message { text-align: center; padding: 2rem; color: #64748b; }
+        .department-table { overflow-x: auto; }
+        @media (max-width: 768px) { .form-row { flex-direction: column; } .btn { width: 100%; justify-content: center; } }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="logo-container"><div class="logo-circle"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></div><div class="university-name">Milton Margai Technical University<small>Exams Management & GPA Grading Portal</small></div></div>
+        </div>
+        <div class="welcome-section">
+            <div class="welcome-text"><span class="greeting">Welcome,</span><span class="user-name">{{ full_name }}</span></div>
+            <div class="role-badge"><i class="fas fa-shield-alt"></i> {{ role|replace('_', ' ')|title }}</div>
+            <a href="{{ url_for('admin.logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="page-header">
+            <a href="{{ url_for('admin.dashboard') }}" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <h1>Transcript Management</h1>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-user-graduate"></i> Student Transcript</h2>
+            <form method="GET" action="{{ url_for('admin.transcript') }}" class="form-row">
+                <div class="form-group"><label>Student ID</label><input type="text" name="student_id" value="{{ selected_student_id or '' }}" placeholder="Enter student ID"></div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Retrieve Data</button>
+                <a href="{{ url_for('admin.transcript') }}" class="btn btn-outline"><i class="fas fa-redo-alt"></i> Reset</a>
+            </form>
+
+            {% if student_data %}
+                <div style="margin-top:1.5rem;">
+                    <h3 style="color:#0A2A66;">Student: {{ student_name }} ({{ selected_student_id }})</h3>
+                    {% if student_data|selectattr('status', 'in', ['FAIL', 'WITHDREW', 'DOUBLE_FAIL'])|list|length > 0 %}
+                    <div class="warning-box"><div class="warning-title"><i class="fas fa-exclamation-triangle"></i> Academic Alert</div><p>This student has a <strong>FAIL, WITHDREW, or DOUBLE_FAIL status</strong> in one or more semesters.</p></div>
+                    {% endif %}
+                    {% for semester in student_data %}
+                    <div class="semester-block">
+                        <div class="semester-header" onclick="toggleSemester(this)">
+                            <h3>{{ semester.academic_year }} - {{ semester.level }} {{ semester.semester }}</h3>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <span>GPA: {{ semester.gpa if semester.gpa is not none else 'N/A' }}</span>
+                                <span class="badge-status {% if semester.status == 'PASS' %}badge-pass{% elif semester.status == 'FAIL' %}badge-fail{% elif semester.status == 'WITHDREW' %}badge-withdrew{% elif semester.status == 'DOUBLE_FAIL' %}badge-double-fail{% else %}badge-pending{% endif %}">{{ semester.status if semester.status else 'Pending' }}</span>
+                                {% if semester.repeated %}<span class="badge-status badge-repeat">Repeat Year</span>{% endif %}
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="semester-details">
+                            <table><thead><tr><th>Course Code</th><th>Course Name</th><th>Credits</th><th>Grade</th><th>Points</th><th>Reference</th></tr></thead>
+                                <tbody>{% for course in semester.courses %}<tr><td>{{ course.course_code }}</td><td>{{ course.course_name }}</td><td>{{ course.credit_hours }}</td><td>{{ course.grade or '-' }}</td><td>{{ course.grade_points or '-' }}</td><td>{% if course.has_reference %}{% if course.reference_display %}<span class="badge-status badge-reference-cleared">{{ course.reference_display }}</span>{% else %}<span class="badge-status badge-reference-pending">Pending</span>{% endif %}{% else %}<span class="badge-status badge-no-reference">No reference</span>{% endif %}</td></tr>{% endfor %}</tbody></table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% elif selected_student_id %}<div class="empty-message"><i class="fas fa-user-graduate" style="font-size:2rem;color:#cbd5e1;"></i><p>No records found for student ID {{ selected_student_id }}</p></div>{% endif %}
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-building"></i> Department Students</h2>
+            <div class="form-row">
+                <div class="form-group"><label>Department</label><select id="deptSelect"><option value="">Select Department</option>{% for dept in departments %}<option value="{{ dept.id }}">{{ dept.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Program</label><select id="programSelect"><option value="">All Programs</option><option value="BSc">BSc</option><option value="Diploma">Diploma</option></select></div>
+                <div class="form-group"><label>Level</label><select id="levelSelect"><option value="">All Levels</option><option value="Year 1">Year 1</option><option value="Year 2">Year 2</option><option value="Year 3">Year 3</option><option value="Year 4">Year 4</option></select></div>
+                <div class="form-group"><label>Academic Year</label><select id="academicYearSelect"><option value="">Latest Year</option><option>2023/2024</option><option>2024/2025</option><option>2025/2026</option></select></div>
+                <button class="btn btn-primary" onclick="queryDepartment()"><i class="fas fa-users"></i> Query</button>
+                <button class="btn btn-outline" onclick="resetDepartmentQuery()"><i class="fas fa-redo-alt"></i> Reset</button>
+            </div>
+            <div id="deptResult" style="margin-top:1.5rem;"></div>
+        </div>
+    </div>
+
+    <script>
+        function escapeHtml(text) { if (!text && text !== 0) return ''; var div = document.createElement('div'); div.textContent = String(text); return div.innerHTML; }
+        function toggleSemester(header) { const details = header.nextElementSibling; details.style.display = details.style.display === 'block' ? 'none' : 'block'; const icon = header.querySelector('.fa-chevron-down'); if (icon) icon.style.transform = details.style.display === 'block' ? 'rotate(180deg)' : ''; }
+        function queryDepartment() {
+            const deptId = document.getElementById('deptSelect').value, program = document.getElementById('programSelect').value, level = document.getElementById('levelSelect').value, academicYear = document.getElementById('academicYearSelect').value;
+            if (!deptId) { alert('Please select a department'); return; }
+            const container = document.getElementById('deptResult');
+            container.innerHTML = '<div style="text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#0A2A66;"></i><p style="color:#64748b;">Loading...</p></div>';
+            let url = '/admin/department-students?dept_id=' + deptId;
+            if (program) url += '&program=' + encodeURIComponent(program);
+            if (level) url += '&level=' + encodeURIComponent(level);
+            if (academicYear) url += '&academic_year=' + encodeURIComponent(academicYear);
+            var xhr = new XMLHttpRequest(); xhr.open('GET', url, true); xhr.timeout = 10000;
+            xhr.onload = function() {
+                if (xhr.status === 200) { try { var data = JSON.parse(xhr.responseText); renderDepartmentResults(data, program, level); } catch(e) { container.innerHTML = '<div class="empty-message" style="color:#ef4444;">Error parsing response</div>'; } }
+                else { container.innerHTML = '<div class="empty-message" style="color:#ef4444;">Server error: ' + xhr.status + '</div>'; }
+            };
+            xhr.onerror = function() { container.innerHTML = '<div class="empty-message" style="color:#ef4444;">Network error</div>'; };
+            xhr.ontimeout = function() { container.innerHTML = '<div class="empty-message" style="color:#ef4444;">Request timed out</div>'; };
+            xhr.send();
+        }
+        function renderDepartmentResults(data, program, level) {
+            var container = document.getElementById('deptResult'), html = '';
+            html += '<div style="margin-bottom:1.5rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:1.25rem;">';
+            html += '<h3 style="color:#0A2A66;"><i class="fas fa-building"></i> ' + escapeHtml(data.department.name) + '</h3>';
+            html += '<div style="display:flex;gap:2rem;flex-wrap:wrap;color:#64748b;font-size:0.9rem;"><span><strong>Faculty:</strong> ' + escapeHtml(data.department.faculty) + '</span><span><strong>HOD:</strong> ' + escapeHtml(data.hod) + '</span><span><strong>Dean:</strong> ' + escapeHtml(data.dean) + '</span><span><strong>Year:</strong> ' + escapeHtml(data.academic_year) + '</span><span><strong>Total:</strong> <span style="color:#0A2A66;font-weight:700;">' + data.total + '</span></span></div></div>';
+            if (data.students && data.students.length > 0) {
+                html += '<div style="overflow-x:auto;"><table><thead><tr style="background:#0A2A66;color:white;"><th style="padding:12px;">ID</th><th style="padding:12px;">Name</th><th style="padding:12px;">Prog</th><th style="padding:12px;text-align:center;">S1 GPA</th><th style="padding:12px;text-align:center;">S1 Status</th><th style="padding:12px;text-align:center;">S2 GPA</th><th style="padding:12px;text-align:center;">S2 Status</th><th style="padding:12px;text-align:center;">Final GPA</th><th style="padding:12px;text-align:center;">Status</th></tr></thead><tbody>';
+                for (var i = 0; i < data.students.length; i++) {
+                    var s = data.students[i];
+                    var sc = function(st) { if (st === 'PASS') return 'background:#d1fae5;color:#065f46;'; if (st === 'FAIL') return 'background:#fee2e2;color:#dc2626;'; if (st === 'WITHDREW') return 'background:#fef3c7;color:#d97706;'; return 'background:#e2e8f0;color:#475569;'; };
+                    html += '<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:12px;"><strong>' + escapeHtml(s.student_id) + '</strong></td><td style="padding:12px;">' + escapeHtml(s.student_name) + '</td><td style="padding:12px;">' + escapeHtml(s.program||'-') + '</td><td style="padding:12px;text-align:center;">' + (s.semester1_gpa!=null?s.semester1_gpa.toFixed(2):'N/A') + '</td><td style="padding:12px;text-align:center;"><span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.7rem;font-weight:600;' + sc(s.semester1_status) + '">' + (s.semester1_status||'Pending') + '</span></td><td style="padding:12px;text-align:center;">' + (s.semester2_gpa!=null?s.semester2_gpa.toFixed(2):'N/A') + '</td><td style="padding:12px;text-align:center;"><span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.7rem;font-weight:600;' + sc(s.semester2_status) + '">' + (s.semester2_status||'Pending') + '</span></td><td style="padding:12px;text-align:center;"><strong>' + (s.final_gpa!=null?s.final_gpa.toFixed(2):'N/A') + '</strong></td><td style="padding:12px;text-align:center;"><span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.7rem;font-weight:600;' + sc(s.final_status) + '">' + (s.final_status||'Pending') + '</span></td></tr>';
+                }
+                html += '</tbody></table></div>';
+            } else { html += '<div class="empty-message"><i class="fas fa-users" style="font-size:3rem;color:#cbd5e1;"></i><h3>No Students Found</h3></div>'; }
+            container.innerHTML = html;
+        }
+        function resetDepartmentQuery() { document.getElementById('deptSelect').value = ''; document.getElementById('programSelect').value = ''; document.getElementById('levelSelect').value = ''; document.getElementById('academicYearSelect').value = ''; document.getElementById('deptResult').innerHTML = ''; }
+    </script>
+</body>
+</html>
