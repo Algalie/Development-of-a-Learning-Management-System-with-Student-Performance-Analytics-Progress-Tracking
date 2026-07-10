@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MMTU - Academic Management System</title>
+    <style>
+      /* ==================== BASE STYLES ==================== */
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        background-color: #f7f9fc;
+        min-height: 100vh;
+        transition: background-color 0.3s ease;
+      }
+
+      /* ==================== DARK MODE ==================== */
+      html.dark,
+      html.dark body,
+      html.dark #root {
+        background-color: #0a0e14 !important;
+        background: #0a0e14 !important;
+        min-height: 100vh;
+      }
+
+      /* Smooth color transitions for dark mode */
+      html.dark * {
+        transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+      }
+
+      /* Custom scrollbar for dark mode */
+      html.dark ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      html.dark ::-webkit-scrollbar-track {
+        background: #0a0e14;
+      }
+
+      html.dark ::-webkit-scrollbar-thumb {
+        background: #1c2330;
+        border-radius: 4px;
+      }
+
+      html.dark ::-webkit-scrollbar-thumb:hover {
+        background: #252d3a;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
