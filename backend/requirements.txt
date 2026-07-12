@@ -1,0 +1,13 @@
+cd "C:\Users\DELL\Desktop\final year _ project\backend"
+
+# Create requirements.txt
+echo flask > requirements.txt
+echo flask-cors >> requirements.txt
+echo flask-sqlalchemy >> requirements.txt
+echo psycopg2-binary >> requirements.txt
+echo gunicorn >> requirements.txt
+echo pyjwt >> requirements.txt
+echo werkzeug >> requirements.txt
+
+# Or just run this:
+pip freeze > requirements.txt
