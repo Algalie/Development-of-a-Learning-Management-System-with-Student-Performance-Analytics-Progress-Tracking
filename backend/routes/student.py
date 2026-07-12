@@ -1140,33 +1140,43 @@ def debug_decode_token():
 @student_bp.route('/ai-assistant', methods=['POST'])
 @token_required
 def ai_assistant():
-    """AI Academic Assistant for students"""
+    """AI Academic Assistant"""
     try:
-        student_id = None
-        if hasattr(request, 'user') and request.user:
-            student_id = request.user.get('student_id') or request.user.get('user_id')
-        
+        student_id = request.user.get('student_id') or request.user.get('user_id')
         data = request.get_json() or {}
         question = data.get('question', '')
-        
+
         if not question:
-            return jsonify({'error': 'Question is required'}), 400
-        
-        # Get student data for context
-        student_data = None
-        if student_id:
-            try:
-                response = student_bp.view_functions['dashboard']()
-                student_data = response[0].json if isinstance(response, tuple) else response.json
-            except:
-                pass
-        
+            return jsonify({'answer': 'Please ask a question.'})
+
+        # Get basic student info
+        from models.gpa import StudentGPA
+        gpa = StudentGPA.query.filter_by(student_id=student_id).order_by(
+            StudentGPA.academic_year.desc(), StudentGPA.semester.desc()
+        ).first()
+
+        student_data = {
+            'student_name': 'Student',
+            'student_id': student_id,
+            'latest_gpa': round(gpa.gpa, 2) if gpa and gpa.gpa else None,
+        }
+
+        print(f"AI Assistant called by {student_id}")
+        print(f"Question: {question}")
+        print(f"Student data: {student_data}")
+
+        from services.ai_service import ask_ai
         answer = ask_ai(question, student_data)
-        return jsonify({'answer': answer})
         
+        print(f"AI Answer: {answer[:100]}...")
+        
+        return jsonify({'answer': answer})
+
     except Exception as e:
-        logger.error(f"AI Assistant error: {str(e)}")
-        return jsonify({'error': 'Failed to process question'}), 500
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"AI ERROR: {error_details}")
+        return jsonify({'answer': f'I am having trouble. Error: {str(e)}'})
 
 
 @student_bp.route('/gpa-prediction', methods=['GET'])
