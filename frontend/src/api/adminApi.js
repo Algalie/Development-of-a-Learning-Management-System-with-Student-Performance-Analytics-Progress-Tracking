@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// ✅ RENDER PRODUCTION URL
+const API_URL = 'https://gpa-backend-p2xu.onrender.com/api';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -8,11 +9,11 @@ const getAuthHeaders = () => {
 };
 
 export const adminApi = {
-  // ==================== DASHBOARD ====================
+  // DASHBOARD
   getDashboardStats: () =>
     axios.get(`${API_URL}/admin/dashboard`, { headers: getAuthHeaders() }),
 
-  // ==================== USER MANAGEMENT ====================
+  // USER MANAGEMENT
   getAdmins: () =>
     axios.get(`${API_URL}/admin/admins`, { headers: getAuthHeaders() }),
 
@@ -31,7 +32,7 @@ export const adminApi = {
   deleteLecturer: (id) =>
     axios.delete(`${API_URL}/admin/delete-lecturer/${id}`, { headers: getAuthHeaders() }),
 
-  // ==================== FACULTY & DEPARTMENT ====================
+  // FACULTY & DEPARTMENT
   getFaculties: () =>
     axios.get(`${API_URL}/admin/faculties`, { headers: getAuthHeaders() }),
 
@@ -56,7 +57,7 @@ export const adminApi = {
   getDepartments: (facultyId) =>
     axios.get(`${API_URL}/admin/api/departments/${facultyId}`, { headers: getAuthHeaders() }),
 
-  // ==================== APPROVALS ====================
+  // APPROVALS
   getCourseApprovals: () =>
     axios.get(`${API_URL}/admin/course-approvals`, { headers: getAuthHeaders() }),
 
@@ -81,12 +82,9 @@ export const adminApi = {
   getApprovalHistory: () =>
     axios.get(`${API_URL}/admin/approval-history`, { headers: getAuthHeaders() }),
 
-  // ==================== REFERENCES ====================
+  // REFERENCES
   getReferenceManagement: (studentId) =>
-    axios.get(`${API_URL}/admin/reference-management`, { 
-      headers: getAuthHeaders(), 
-      params: { student_id: studentId } 
-    }),
+    axios.get(`${API_URL}/admin/reference-management`, { headers: getAuthHeaders(), params: { student_id: studentId } }),
 
   getReferenceDashboard: () =>
     axios.get(`${API_URL}/admin/reference-dashboard`, { headers: getAuthHeaders() }),
@@ -97,7 +95,7 @@ export const adminApi = {
   resetAllReferences: () =>
     axios.post(`${API_URL}/admin/api/reset-all-references`, {}, { headers: getAuthHeaders() }),
 
-  // ==================== GPA & TRANSCRIPT ====================
+  // GPA & TRANSCRIPT
   getStudentGrades: (data) =>
     axios.post(`${API_URL}/admin/api/student-grades`, data, { headers: getAuthHeaders() }),
 
@@ -105,10 +103,7 @@ export const adminApi = {
     axios.post(`${API_URL}/admin/api/calculate-student-gpa`, data, { headers: getAuthHeaders() }),
 
   getTranscript: (studentId) =>
-    axios.get(`${API_URL}/admin/transcript`, { 
-      headers: getAuthHeaders(), 
-      params: { student_id: studentId } 
-    }),
+    axios.get(`${API_URL}/admin/transcript`, { headers: getAuthHeaders(), params: { student_id: studentId } }),
 
   saveTranscript: (data) =>
     axios.post(`${API_URL}/admin/save-transcript`, data, { headers: getAuthHeaders() }),
@@ -116,7 +111,7 @@ export const adminApi = {
   verifyTranscript: (transcriptId) =>
     axios.get(`${API_URL}/admin/verify-transcript/${transcriptId}`, { headers: getAuthHeaders() }),
 
-  // ==================== DEPARTMENT STUDENTS ====================
+  // DEPARTMENT STUDENTS
   getDepartmentStudents: (params) =>
     axios.get(`${API_URL}/admin/department-students`, { headers: getAuthHeaders(), params }),
 
@@ -126,30 +121,28 @@ export const adminApi = {
   deleteStudent: (studentId) =>
     axios.delete(`${API_URL}/admin/api/delete-student/${studentId}`, { headers: getAuthHeaders() }),
 
-  // ==================== NOTIFICATIONS ====================
+  // NOTIFICATIONS
   getNotifications: () =>
     axios.get(`${API_URL}/admin/notifications`, { headers: getAuthHeaders() }),
 
   getNotificationCount: () =>
     axios.get(`${API_URL}/admin/notifications/count`, { headers: getAuthHeaders() }),
 
-  // ==================== GRADE EDIT REQUESTS (NEW) ====================
+  // GRADE EDIT REQUESTS
   getGradeEditRequests: () =>
     axios.get(`${API_URL}/admin/grade-edit-requests`, { headers: getAuthHeaders() }),
 
   activateGradeEdit: (id, data) =>
     axios.post(`${API_URL}/admin/activate-grade-edit/${id}`, data, { headers: getAuthHeaders() }),
 
-    // ==================== BLOCK GPA ====================
+  // BLOCK GPA
   checkDepartmentCourses: (data) =>
     axios.post(`${API_URL}/admin/api/block-gpa/check-department`, data, { headers: getAuthHeaders() }),
 
   calculateBlockGPA: (data) =>
     axios.post(`${API_URL}/admin/api/block-gpa/calculate`, data, { headers: getAuthHeaders() }),
 
-
-
-    notifyMissingStudents: (data) =>
+  notifyMissingStudents: (data) =>
     axios.post(`${API_URL}/admin/api/block-gpa/notify-missing`, data, { headers: getAuthHeaders() }),
 
   notifyLecturerMissing: (data) =>
