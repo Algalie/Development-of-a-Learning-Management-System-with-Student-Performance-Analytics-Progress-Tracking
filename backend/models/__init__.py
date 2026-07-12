@@ -8,6 +8,7 @@ from .approval import ApprovalRequest, ApprovalStep, ApprovalHistory, CourseAppr
 from .gpa import StudentGPA, StudentAcademicStatus, StudentGradeRecord
 from .notification import Notification
 from .session import UserSession, TranscriptRecord
+from .grade_edit import GradeEditRequest  # NEW
 
 __all__ = [
     'Admin', 'Student', 'Lecturer',
@@ -17,5 +18,6 @@ __all__ = [
     'ApprovalRequest', 'ApprovalStep', 'ApprovalHistory', 'CourseApproval', 'CourseAssessmentApproval',
     'StudentGPA', 'StudentAcademicStatus', 'StudentGradeRecord',
     'Notification',
-    'UserSession', 'TranscriptRecord' '',
+    'UserSession', 'TranscriptRecord',
+    'GradeEditRequest',  # NEW
 ]

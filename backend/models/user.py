@@ -55,6 +55,7 @@ class Lecturer(db.Model):
     role = db.Column(db.String(50), default='lecturer')
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
     faculty_id = db.Column(db.Integer, db.ForeignKey('faculties.id'))
+    signature = db.Column(db.String(200), nullable=True)  # NEW: Digital signature
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
 
@@ -67,6 +68,26 @@ class Lecturer(db.Model):
         elif self.faculty:
             return f"{self.faculty.name} (Faculty Level)"
         return 'Not assigned'
+    
+    def has_role(self, role_name):
+        """Check if lecturer has a specific role"""
+        return self.role == role_name
+    
+    def is_hod(self):
+        return self.role == 'head_of_department'
+    
+    def is_dean(self):
+        return self.role == 'dean'
+    
+    def is_exam_officer(self):
+        return self.role == 'exam_officer'
+    
+    def is_approver(self):
+        return self.role in ['head_of_department', 'dean', 'exam_officer']
+    
+    def can_create_courses(self):
+        """Only HOD can create courses"""
+        return self.role == 'head_of_department'
 
     def to_dict(self):
         return {
@@ -79,6 +100,7 @@ class Lecturer(db.Model):
             'role': self.role,
             'department_id': self.department_id,
             'faculty_id': self.faculty_id,
+            'signature': self.signature,  # NEW
             'department': {
                 'id': self.department.id,
                 'name': self.department.name,

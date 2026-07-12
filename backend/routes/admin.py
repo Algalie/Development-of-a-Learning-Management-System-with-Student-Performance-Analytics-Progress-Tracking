@@ -26,10 +26,17 @@ def dashboard():
     total_courses = Course.query.count()
     total_students = db.session.query(CourseStudent.student_id).distinct().count()
     
+    # Course approvals
     pending_courses = ApprovalRequest.query.filter_by(submission_type='course').filter(
         ApprovalRequest.status.in_(['pending_hod', 'pending_dean', 'pending_exam'])
     ).count()
     
+    # Combined grades
+    pending_grades = ApprovalRequest.query.filter_by(submission_type='grades').filter(
+        ApprovalRequest.status.in_(['pending_hod', 'pending_dean', 'pending_exam'])
+    ).count()
+    
+    # Legacy CA and Exam (keep for backward compatibility)
     pending_ca = ApprovalRequest.query.filter_by(submission_type='ca').filter(
         ApprovalRequest.status.in_(['pending_hod', 'pending_dean', 'pending_exam'])
     ).count()
@@ -42,8 +49,8 @@ def dashboard():
         ApprovalRequest.status.in_(['pending_hod', 'pending_dean', 'pending_exam'])
     ).count()
     
-    pending_grades = pending_ca + pending_exam + pending_ref
-    pending_at_exam = pending_courses + pending_grades
+    pending_grades_total = pending_grades + pending_ca + pending_exam + pending_ref
+    pending_at_exam = pending_courses + pending_grades_total
     
     finalized_count = ApprovalRequest.query.filter_by(status='finalized').count()
     rejected_count = ApprovalRequest.query.filter_by(status='rejected').count()
@@ -153,7 +160,8 @@ def add_lecturer():
         phone=data.get('phone'),
         qualification=data.get('qualification'),
         department_id=data.get('department_id') if data.get('department_id') else None,
-        faculty_id=data.get('faculty_id') if data.get('faculty_id') else None
+        faculty_id=data.get('faculty_id') if data.get('faculty_id') else None,
+        signature=data.get('signature')  # NEW: Allow setting signature on creation
     )
     db.session.add(lecturer)
     db.session.commit()
@@ -175,6 +183,7 @@ def edit_lecturer(id):
     lecturer.qualification = data.get('qualification', lecturer.qualification)
     lecturer.department_id = data.get('department_id') or None
     lecturer.faculty_id = data.get('faculty_id') or None
+    lecturer.signature = data.get('signature', lecturer.signature)  # NEW
     
     if data.get('password'):
         lecturer.password = data.get('password')
@@ -309,6 +318,7 @@ def get_departments(faculty_id):
     departments = Department.query.filter_by(faculty_id=faculty_id).all()
     return jsonify({'departments': [{'id': d.id, 'name': d.name} for d in departments]})
 
+
 # ==================== COURSE APPROVALS ====================
 
 @admin_bp.route('/course-approvals', methods=['GET'])
@@ -362,21 +372,55 @@ def grade_approvals():
         return jsonify({'error': 'Unauthorized'}), 403
     from models.approval import ApprovalRequest
     
-    ca_approvals = ApprovalRequest.query.filter_by(submission_type='ca').order_by(ApprovalRequest.submitted_at.desc()).all()
-    exam_approvals = ApprovalRequest.query.filter_by(submission_type='exam').order_by(ApprovalRequest.submitted_at.desc()).all()
-    reference_approvals = ApprovalRequest.query.filter_by(submission_type='reference').order_by(ApprovalRequest.submitted_at.desc()).all()
-    rejected_approvals = ApprovalRequest.query.filter_by(status='rejected').order_by(ApprovalRequest.rejected_at.desc()).all()
+    # Combined grades (new)
+    grades_approvals = ApprovalRequest.query.filter_by(
+        submission_type='grades'
+    ).order_by(ApprovalRequest.submitted_at.desc()).all()
+    
+    # Legacy CA and Exam (keep for backward compatibility)
+    ca_approvals = ApprovalRequest.query.filter_by(
+        submission_type='ca'
+    ).order_by(ApprovalRequest.submitted_at.desc()).all()
+    
+    exam_approvals = ApprovalRequest.query.filter_by(
+        submission_type='exam'
+    ).order_by(ApprovalRequest.submitted_at.desc()).all()
+    
+    reference_approvals = ApprovalRequest.query.filter_by(
+        submission_type='reference'
+    ).order_by(ApprovalRequest.submitted_at.desc()).all()
+    
+    rejected_approvals = ApprovalRequest.query.filter_by(
+        status='rejected'
+    ).order_by(ApprovalRequest.rejected_at.desc()).all()
     
     stats = {
-        'pending_ca': ApprovalRequest.query.filter_by(submission_type='ca').filter(ApprovalRequest.status.like('pending_%')).count(),
-        'pending_exam': ApprovalRequest.query.filter_by(submission_type='exam').filter(ApprovalRequest.status.like('pending_%')).count(),
-        'pending_references': ApprovalRequest.query.filter_by(submission_type='reference').filter(ApprovalRequest.status.like('pending_%')).count(),
-        'approved_ca': ApprovalRequest.query.filter_by(submission_type='ca', status='finalized').count(),
-        'approved_exam': ApprovalRequest.query.filter_by(submission_type='exam', status='finalized').count(),
+        'pending_grades': ApprovalRequest.query.filter_by(
+            submission_type='grades'
+        ).filter(ApprovalRequest.status.like('pending_%')).count(),
+        'pending_ca': ApprovalRequest.query.filter_by(
+            submission_type='ca'
+        ).filter(ApprovalRequest.status.like('pending_%')).count(),
+        'pending_exam': ApprovalRequest.query.filter_by(
+            submission_type='exam'
+        ).filter(ApprovalRequest.status.like('pending_%')).count(),
+        'pending_references': ApprovalRequest.query.filter_by(
+            submission_type='reference'
+        ).filter(ApprovalRequest.status.like('pending_%')).count(),
+        'approved_grades': ApprovalRequest.query.filter_by(
+            submission_type='grades', status='finalized'
+        ).count(),
+        'approved_ca': ApprovalRequest.query.filter_by(
+            submission_type='ca', status='finalized'
+        ).count(),
+        'approved_exam': ApprovalRequest.query.filter_by(
+            submission_type='exam', status='finalized'
+        ).count(),
         'rejected': len(rejected_approvals),
     }
     
     return jsonify({
+        'grades_approvals': [a.to_dict() for a in grades_approvals],
         'ca_approvals': [a.to_dict() for a in ca_approvals],
         'exam_approvals': [a.to_dict() for a in exam_approvals],
         'reference_approvals': [a.to_dict() for a in reference_approvals],
@@ -393,16 +437,18 @@ def exam_office_submissions():
         return jsonify({'error': 'Unauthorized'}), 403
     from models.approval import ApprovalRequest
     
-    tab = request.args.get('tab', 'pending')
-    
-    # Get ALL submissions
+    # Get ALL submissions (including new 'grades' type)
     all_pending = ApprovalRequest.query.filter(
         ApprovalRequest.status.in_(['pending_hod', 'pending_dean', 'pending_exam'])
     ).order_by(ApprovalRequest.submitted_at.desc()).all()
     
-    all_finalized = ApprovalRequest.query.filter_by(status='finalized').order_by(ApprovalRequest.finalized_at.desc()).all()
+    all_finalized = ApprovalRequest.query.filter_by(
+        status='finalized'
+    ).order_by(ApprovalRequest.finalized_at.desc()).all()
     
-    all_rejected = ApprovalRequest.query.filter_by(status='rejected').order_by(ApprovalRequest.rejected_at.desc()).all()
+    all_rejected = ApprovalRequest.query.filter_by(
+        status='rejected'
+    ).order_by(ApprovalRequest.rejected_at.desc()).all()
     
     stats = {
         'pending': len(all_pending),
@@ -469,6 +515,12 @@ def exam_approve(id):
     elif req.submission_type == 'exam':
         students = CourseStudent.query.filter_by(course_id=req.submission_id).all()
         for s in students:
+            s.exam_status = 'finalized'
+    
+    elif req.submission_type == 'grades':  # NEW - Combined grades
+        students = CourseStudent.query.filter_by(course_id=req.submission_id).all()
+        for s in students:
+            s.ca_status = 'finalized'
             s.exam_status = 'finalized'
             
     elif req.submission_type == 'reference':
@@ -655,27 +707,19 @@ def student_grades():
     level = data.get('level', '').strip()
     semester = data.get('semester', '').strip()
     
-    print(f"\n=== GPA CALCULATOR API ===")
-    print(f"Student: {student_id}, Year: {academic_year}, Level: {level}, Semester: {semester}")
-    
     if not all([student_id, academic_year, level, semester]):
         return jsonify({'error': 'Missing fields'}), 400
     
-    # Map level to year format
     level_to_year = {"Level 100": "Year 1", "Level 200": "Year 2", "Level 300": "Year 3", "Level 400": "Year 4"}
     year_format = level_to_year.get(level, level.replace('Level ', 'Year '))
     full_semester = f"{year_format} - {semester}"
     
-    print(f"Looking for semester: '{full_semester}'")
-    
-    # Get student info
     student = CourseStudent.query.filter_by(student_id=student_id).first()
     if not student:
         return jsonify({'error': 'Student not found'}), 404
     
     student_name = student.student_name
     
-    # Find enrollments
     enrollments = CourseStudent.query.filter_by(student_id=student_id).join(Course).filter(
         Course.academic_year == academic_year,
         Course.semester == full_semester
@@ -687,7 +731,6 @@ def student_grades():
             Course.semester.like(f'%{semester}%')
         ).all()
     
-    # Get previous GPAs
     previous_gpas = StudentGPA.query.filter_by(student_id=student_id).order_by(
         StudentGPA.academic_year, StudentGPA.semester
     ).all()
@@ -711,36 +754,25 @@ def student_grades():
         
         if ref:
             if ref.reference_status == 'cleared' and ref.reference_grade:
-                # ✅ REFERENCE CLEARED - Use new grade, DOUBLE credit hours
                 final_grade = ref.reference_grade
                 grade_points = grade_map.get(ref.reference_grade, 0.0)
-                effective_credits = original_credits * 2  # PENALTY: Double credits
+                effective_credits = original_credits * 2
                 display_grade = ref.display_grade
-                print(f"  ✓ {e.course.course_code}: Ref CLEARED - {e.grade}→{ref.reference_grade}, "
-                      f"Credits: {original_credits}→{effective_credits} (×2 penalty), Points: {grade_points}")
                 
             elif ref.reference_status == 'double_fail':
-                # ❌ DOUBLE FAIL - 0 grade points, credits stay same
                 final_grade = 'DOUBLE_FAIL'
                 grade_points = 0.0
-                effective_credits = original_credits  # Credits stay same but 0 points
+                effective_credits = original_credits
                 display_grade = ref.display_grade
                 has_double_fail = True
                 double_fail_courses.append(e.course.course_code)
-                print(f"  ✗ {e.course.course_code}: DOUBLE FAIL - Credits: {original_credits}, Points: 0.0")
                 
             elif ref.reference_status == 'pending':
-                # ⏳ PENDING - Cannot calculate
                 final_grade = 'PENDING_REF'
                 grade_points = 0.0
                 effective_credits = original_credits
                 has_pending_ref = True
                 pending_ref_courses.append(e.course.course_code)
-                print(f"  ⏳ {e.course.course_code}: PENDING reference")
-        else:
-            # Normal grade - no reference
-            print(f"  • {e.course.course_code}: Normal - Grade: {e.grade}, "
-                  f"Credits: {original_credits}, Points: {e.grade_points}")
         
         current_grades.append({
             'course_code': e.course.course_code,
@@ -763,14 +795,8 @@ def student_grades():
         'gpa': round(g.gpa, 2) if g.gpa else None
     } for g in previous_gpas]
     
-    # Calculate totals for display
     total_original = sum(g['credit_hours'] for g in current_grades)
     total_effective = sum(g['effective_credit_hours'] for g in current_grades)
-    
-    print(f"Summary: {len(current_grades)} courses, "
-          f"Original Credits: {total_original}, Effective Credits: {total_effective}, "
-          f"Pending: {has_pending_ref}, DoubleFail: {has_double_fail}")
-    print(f"=== END GPA CALCULATOR ===\n")
     
     return jsonify({
         'student_name': student_name,
@@ -800,7 +826,6 @@ def calculate_gpa():
     if not grades:
         return jsonify({'error': 'No grades provided'}), 400
     
-    # Use EFFECTIVE credit hours (doubled for cleared references)
     total_credits = 0
     total_points = 0
     formula_parts = []
@@ -822,7 +847,6 @@ def calculate_gpa():
         status = 'WITHDREW'
     
     formula_str = ' + '.join(formula_parts)
-    print(f"GPA Calculation: {formula_str} = {total_points:.2f} / {total_credits} = {gpa:.2f} ({status})")
     
     # Save to database
     existing = StudentGPA.query.filter_by(
@@ -862,6 +886,7 @@ def calculate_gpa():
         'total_points': round(total_points, 2),
         'formula': f"({formula_str}) = {total_points:.2f} / {total_credits} = {gpa:.2f}"
     })
+
 # ==================== TRANSCRIPT ====================
 
 @admin_bp.route('/transcript', methods=['GET'])
@@ -878,7 +903,9 @@ def transcript():
     if not student_id:
         return jsonify({'student_data': None, 'student_name': None})
     
-    records = StudentGPA.query.filter_by(student_id=student_id).order_by(StudentGPA.academic_year, StudentGPA.semester).all()
+    records = StudentGPA.query.filter_by(student_id=student_id).order_by(
+        StudentGPA.academic_year, StudentGPA.semester
+    ).all()
     
     if not records:
         enrollment = CourseStudent.query.filter_by(student_id=student_id).first()
@@ -890,6 +917,16 @@ def transcript():
     student_name = records[0].student_name
     level_to_year = {"Level 100": "Year 1", "Level 200": "Year 2", "Level 300": "Year 3", "Level 400": "Year 4"}
     
+    # ✅ Check ALL enrollments for double fail references (regardless of semester)
+    all_enrollments = CourseStudent.query.filter_by(student_id=student_id).all()
+    has_any_double_fail = False
+    
+    for e in all_enrollments:
+        ref = ReferenceGrade.query.filter_by(course_id=e.course_id, student_id=e.id).first()
+        if ref and ref.reference_status == 'double_fail':
+            has_any_double_fail = True
+            break
+    
     history = []
     for rec in records:
         year_format = level_to_year.get(rec.level, rec.level)
@@ -900,9 +937,21 @@ def transcript():
             Course.semester == full_semester
         ).all()
         
+        if not enrollments:
+            enrollments = CourseStudent.query.filter_by(student_id=student_id).join(Course).filter(
+                Course.academic_year == rec.academic_year,
+                Course.semester.like(f'%{rec.semester}%')
+            ).all()
+        
         courses = []
+        semester_has_double_fail = False
+        
         for e in enrollments:
             ref = ReferenceGrade.query.filter_by(course_id=e.course_id, student_id=e.id).first()
+            
+            if ref and ref.reference_status == 'double_fail':
+                semester_has_double_fail = True
+            
             courses.append({
                 'course_code': e.course.course_code,
                 'course_name': e.course.course_name,
@@ -911,19 +960,30 @@ def transcript():
                 'grade_points': e.grade_points,
                 'score': e.total_score,
                 'has_reference': ref is not None,
-                'reference_display': ref.display_grade if ref and ref.display_grade else None
+                'reference_display': ref.display_grade if ref and ref.display_grade else None,
+                'reference_status': ref.reference_status if ref else None,
             })
+        
+        # ✅ Determine effective status - DOUBLE_FAIL overrides everything
+        effective_status = rec.student_status
+        if semester_has_double_fail or has_any_double_fail:
+            effective_status = 'DOUBLE_FAIL'
         
         history.append({
             'academic_year': rec.academic_year,
             'level': rec.level,
             'semester': rec.semester,
             'gpa': round(rec.gpa, 2) if rec.gpa else None,
-            'status': rec.student_status,
+            'status': effective_status,
+            'has_double_fail': semester_has_double_fail or has_any_double_fail,
             'courses': courses
         })
     
-    return jsonify({'student_data': history, 'student_name': student_name})
+    return jsonify({
+        'student_data': history, 
+        'student_name': student_name,
+        'has_double_fail': has_any_double_fail,
+    })
 
 # ==================== DEPARTMENT STUDENTS ====================
 
@@ -946,7 +1006,6 @@ def department_students():
     if not department:
         return jsonify({'error': 'Department not found'}), 404
     
-    # Get students from CourseStudent enrollments
     query = db.session.query(CourseStudent).join(Course).filter(Course.department_id == dept_id)
     if academic_year:
         query = query.filter(Course.academic_year == academic_year)
@@ -969,55 +1028,54 @@ def department_students():
                 'final_gpa': None, 'final_status': None,
             }
     
-        for sid in students_dict.keys():
-            gpa_records = StudentGPA.query.filter_by(student_id=sid)
-            if academic_year:
-                gpa_records = gpa_records.filter_by(academic_year=academic_year)
-            gpa_records = gpa_records.order_by(StudentGPA.semester).all()
-            
-            sem1_gpa = None
-            sem2_gpa = None
-            
-            for gpa in gpa_records:
-                if 'Semester 1' in (gpa.semester or ''):
-                    students_dict[sid]['semester1_gpa'] = round(gpa.gpa, 2) if gpa.gpa else None
-                    students_dict[sid]['semester1_status'] = gpa.student_status
-                    sem1_gpa = gpa.gpa
-                elif 'Semester 2' in (gpa.semester or ''):
-                    students_dict[sid]['semester2_gpa'] = round(gpa.gpa, 2) if gpa.gpa else None
-                    students_dict[sid]['semester2_status'] = gpa.student_status
-                    sem2_gpa = gpa.gpa
-            
-            if sem1_gpa is not None and sem2_gpa is not None:
-                final = (sem1_gpa + sem2_gpa) / 2
-                students_dict[sid]['final_gpa'] = round(final, 2)
-                if final >= 3.0:
-                    students_dict[sid]['final_status'] = 'PASS'
-                elif final >= 2.7:
+    for sid in students_dict.keys():
+        gpa_records = StudentGPA.query.filter_by(student_id=sid)
+        if academic_year:
+            gpa_records = gpa_records.filter_by(academic_year=academic_year)
+        gpa_records = gpa_records.order_by(StudentGPA.semester).all()
+        
+        sem1_gpa = None
+        sem2_gpa = None
+        
+        for gpa in gpa_records:
+            if 'Semester 1' in (gpa.semester or ''):
+                students_dict[sid]['semester1_gpa'] = round(gpa.gpa, 2) if gpa.gpa else None
+                students_dict[sid]['semester1_status'] = gpa.student_status
+                sem1_gpa = gpa.gpa
+            elif 'Semester 2' in (gpa.semester or ''):
+                students_dict[sid]['semester2_gpa'] = round(gpa.gpa, 2) if gpa.gpa else None
+                students_dict[sid]['semester2_status'] = gpa.student_status
+                sem2_gpa = gpa.gpa
+        
+        if sem1_gpa is not None and sem2_gpa is not None:
+            final = (sem1_gpa + sem2_gpa) / 2
+            students_dict[sid]['final_gpa'] = round(final, 2)
+            if final >= 3.0:
+                students_dict[sid]['final_status'] = 'PASS'
+            elif final >= 2.7:
+                students_dict[sid]['final_status'] = 'FAIL'
+            else:
+                students_dict[sid]['final_status'] = 'WITHDREW'
+        
+        # FALLBACK
+        if students_dict[sid]['semester1_status'] is None and students_dict[sid]['semester2_status'] is None and students_dict[sid]['final_status'] is None:
+            from models.reference import ReferenceGrade
+            student_courses = CourseStudent.query.filter_by(student_id=sid).all()
+            for c in student_courses:
+                if c.grade == 'F':
                     students_dict[sid]['final_status'] = 'FAIL'
-                else:
-                    students_dict[sid]['final_status'] = 'WITHDREW'
-            
-            # FALLBACK: Derive status from course grades if no GPA records
-            if students_dict[sid]['semester1_status'] is None and students_dict[sid]['semester2_status'] is None and students_dict[sid]['final_status'] is None:
-                from models.reference import ReferenceGrade
-                student_courses = CourseStudent.query.filter_by(student_id=sid).all()
-                for c in student_courses:
-                    if c.grade == 'F':
+                    break
+                elif c.grade == 'E':
+                    ref = ReferenceGrade.query.filter_by(course_id=c.course_id, student_id=c.id).first()
+                    if ref and ref.reference_status == 'double_fail':
                         students_dict[sid]['final_status'] = 'FAIL'
                         break
-                    elif c.grade == 'E':
-                        ref = ReferenceGrade.query.filter_by(course_id=c.course_id, student_id=c.id).first()
-                        if ref and ref.reference_status == 'double_fail':
-                            students_dict[sid]['final_status'] = 'FAIL'
-                            break
-                        elif ref and ref.reference_status == 'pending':
-                            students_dict[sid]['final_status'] = 'PENDING REF'
-                            break
+                    elif ref and ref.reference_status == 'pending':
+                        students_dict[sid]['final_status'] = 'PENDING REF'
+                        break
     
     students = sorted(students_dict.values(), key=lambda x: x['student_name'])
     
-    # Split into active and failed/withdrew
     active_students = []
     failed_students = []
     
@@ -1029,7 +1087,6 @@ def department_students():
             is_failed = True
         if s['final_status'] in ['FAIL', 'WITHDREW']:
             is_failed = True
-        # Also check if GPA is below 2.7
         if s['final_gpa'] is not None and s['final_gpa'] < 2.7:
             is_failed = True
         if s['semester1_gpa'] is not None and s['semester1_gpa'] < 2.7 and s['semester1_status'] in ['FAIL', 'WITHDREW', None]:
@@ -1051,8 +1108,6 @@ def department_students():
         dean_record = Lecturer.query.filter_by(faculty_id=department.faculty_id, role='dean').first()
         if dean_record:
             dean = dean_record.full_name
-    
-    print(f"Department query: dept={department.name}, active={len(active_students)}, failed={len(failed_students)}")
     
     return jsonify({
         'department': {
@@ -1095,7 +1150,6 @@ def failure_history(student_id):
     records_data = []
     seen_combinations = set()
     
-    # Add GPA records
     for rec in records:
         key = f"{rec.academic_year}_{rec.level}_{rec.semester}"
         if key not in seen_combinations:
@@ -1113,7 +1167,6 @@ def failure_history(student_id):
                 'source': 'gpa'
             })
     
-    # Also check for double fail references that might not have GPA records
     enrollments = CourseStudent.query.filter_by(student_id=student_id).all()
     for cs in enrollments:
         ref = ReferenceGrade.query.filter_by(course_id=cs.course_id, student_id=cs.id).first()
@@ -1135,38 +1188,11 @@ def failure_history(student_id):
                     'source': 'reference'
                 })
     
-    # Also check for F grades (failures)
-    for cs in enrollments:
-        if cs.grade == 'F':
-            course = Course.query.get(cs.course_id)
-            if course:
-                # Check if there's already a GPA record for this semester
-                sem_key = f"{course.academic_year}_{course.semester}"
-                already_exists = any(
-                    f"{r['academic_year']}_{r.get('level', '')} {r.get('semester', '')}".strip() == f"{course.academic_year} {course.semester}".strip()
-                    for r in records_data
-                )
-                if not already_exists and course:
-                    records_data.append({
-                        'id': cs.id,
-                        'academic_year': course.academic_year,
-                        'level': course.semester.split(' - ')[0] if ' - ' in (course.semester or '') else 'N/A',
-                        'semester': course.semester.split(' - ')[1] if ' - ' in (course.semester or '') else course.semester,
-                        'gpa': 0.0,
-                        'status': 'FAIL',
-                        'total_credit_hours': course.credit_hours,
-                        'pending_references_count': 0,
-                        'created_at': cs.added_at.isoformat() if cs.added_at else None,
-                        'source': 'course_grade'
-                    })
-    
     summary = {
         'total_failures': sum(1 for r in records_data if r['status'] == 'FAIL'),
         'total_withdrew': sum(1 for r in records_data if r['status'] == 'WITHDREW'),
         'total_double_fail': sum(1 for r in records_data if r['status'] == 'DOUBLE_FAIL'),
     }
-    
-    print(f"Failure history for {student_id}: {len(records_data)} records found")
     
     return jsonify({
         'student_id': student_id,
@@ -1205,15 +1231,13 @@ def delete_student(student_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+    
 
-# ==================== NOTIFICATIONS ====================
+    # ==================== NOTIFICATIONS ====================
 
 @admin_bp.route('/notifications', methods=['GET'])
 @token_required
 def notifications():
-    # Debug: print user info
-    print(f"NOTIFICATIONS: user={request.user}")
-    
     from models.notification import Notification
     
     admin_id = request.user['user_id']
@@ -1231,10 +1255,24 @@ def notifications():
         db.session.commit()
     
     result = [n.to_dict() for n in notifs]
-    print(f"Found {len(result)} notifications for admin {admin_id}")
     
     return jsonify({'notifications': result})
 
+
+@admin_bp.route('/notifications/count', methods=['GET'])
+@token_required
+def notification_count():
+    from models.notification import Notification
+    count = Notification.query.filter_by(
+        user_id=request.user['user_id'],
+        user_type='admin',
+        is_read=False,
+        is_dismissed=False
+    ).count()
+    return jsonify({'count': count})
+
+
+# ==================== TRANSCRIPT SAVE & VERIFY ====================
 
 @admin_bp.route('/save-transcript', methods=['POST'])
 @token_required
@@ -1313,14 +1351,570 @@ def verify_transcript(transcript_id):
     })
 
 
-@admin_bp.route('/notifications/count', methods=['GET'])
+# ==================== GRADE EDIT REQUESTS (ADMIN / EXAM OFFICE) ====================
+
+@admin_bp.route('/grade-edit-requests', methods=['GET'])
 @token_required
-def notification_count():
+def admin_grade_edit_requests():
+    """Get all grade edit requests for admin review"""
+    if request.user['user_type'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    from models.grade_edit import GradeEditRequest
+    
+    # Pending at Exam Office
+    pending = GradeEditRequest.query.filter_by(
+        status='pending_exam'
+    ).order_by(GradeEditRequest.created_at.desc()).all()
+    
+    # All requests
+    all_requests = GradeEditRequest.query.order_by(
+        GradeEditRequest.created_at.desc()
+    ).limit(100).all()
+    
+    # Stats
+    stats = {
+        'pending_exam': len(pending),
+        'pending_hod': GradeEditRequest.query.filter_by(status='pending_hod').count(),
+        'pending_dean': GradeEditRequest.query.filter_by(status='pending_dean').count(),
+        'approved': GradeEditRequest.query.filter_by(status='approved').count(),
+        'rejected': GradeEditRequest.query.filter_by(status='rejected').count(),
+        'applied': GradeEditRequest.query.filter_by(edit_applied=True).count(),
+    }
+    
+    return jsonify({
+        'pending': [r.to_dict() for r in pending],
+        'all': [r.to_dict() for r in all_requests],
+        'stats': stats,
+    })
+
+
+@admin_bp.route('/activate-grade-edit/<int:edit_id>', methods=['POST'])
+@token_required
+def activate_grade_edit(edit_id):
+    """
+    Exam Office activates a grade edit after HOD and Dean approval.
+    This opens the specific grade for re-editing by the lecturer.
+    """
+    if request.user['user_type'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    from models.grade_edit import GradeEditRequest
+    from models.academic import CourseStudent
     from models.notification import Notification
-    count = Notification.query.filter_by(
-        user_id=request.user['user_id'],
-        user_type='admin',
-        is_read=False,
-        is_dismissed=False
-    ).count()
-    return jsonify({'count': count})
+    
+    edit_req = GradeEditRequest.query.get_or_404(edit_id)
+    
+    if edit_req.status != 'pending_exam':
+        return jsonify({'message': 'Edit request is not at Exam Office stage'}), 400
+    
+    data = request.get_json() or {}
+    signature = data.get('signature', f"Admin - {request.user.get('full_name', 'Exam Office')}")
+    apply_edit = data.get('apply_edit', True)
+    reject = data.get('reject', False)
+    
+    if reject:
+        # Reject the edit request
+        edit_req.status = 'rejected'
+        edit_req.exam_activated = False
+        edit_req.exam_activated_by_id = request.user['user_id']
+        edit_req.exam_activated_at = datetime.utcnow()
+        edit_req.exam_signature = signature
+        
+        db.session.add(Notification(
+            user_id=edit_req.requested_by_id,
+            user_type='lecturer',
+            title='Grade Edit Rejected by Exam Office',
+            message=f'Your edit request for {edit_req.requested_field} was rejected.',
+            notification_type='rejection',
+            request_id=None,  # ✅ FIXED
+        ))
+    else:
+        # Activate the edit
+        edit_req.exam_activated = True
+        edit_req.exam_activated_by_id = request.user['user_id']
+        edit_req.exam_activated_at = datetime.utcnow()
+        edit_req.exam_signature = signature
+        edit_req.status = 'approved'
+        
+        # Apply the edit if requested
+        if apply_edit:
+            cs = CourseStudent.query.get(edit_req.course_student_id)
+            if cs:
+                # Update the requested field
+                setattr(cs, edit_req.requested_field, edit_req.new_value)
+                
+                # Recalculate if score-related
+                if edit_req.requested_field in ['test_score', 'assignment_score', 'attendance_score', 'exam_score']:
+                    ca = (cs.test_score or 0) + (cs.assignment_score or 0) + (cs.attendance_score or 0)
+                    cs.continuous_assessment = ca
+                    total = ca + (cs.exam_score or 0)
+                    cs.total_score = total
+                    
+                    # Recalculate grade
+                    if total >= 75:
+                        cs.grade = 'A'; cs.grade_points = 5.0
+                    elif total >= 65:
+                        cs.grade = 'B'; cs.grade_points = 4.0
+                    elif total >= 50:
+                        cs.grade = 'C'; cs.grade_points = 3.0
+                    elif total >= 40:
+                        cs.grade = 'D'; cs.grade_points = 2.0
+                    elif total >= 30:
+                        cs.grade = 'E'; cs.grade_points = 1.0
+                    else:
+                        cs.grade = 'F'; cs.grade_points = 0.0
+                
+                edit_req.edit_applied = True
+                edit_req.edit_applied_at = datetime.utcnow()
+        
+        db.session.add(Notification(
+            user_id=edit_req.requested_by_id,
+            user_type='lecturer',
+            title='Grade Edit Approved & Applied',
+            message=f'Your edit request for {edit_req.requested_field} has been approved and applied.',
+            notification_type='finalized',
+            request_id=None,  # ✅ FIXED
+        ))
+    
+    db.session.commit()
+    return jsonify({
+        'message': 'Grade edit ' + ('rejected' if reject else 'activated successfully'),
+        'edit_request': edit_req.to_dict(),
+    })
+
+@admin_bp.route('/approval-history', methods=['GET'])
+@token_required
+def approval_history():
+    """Get approval history for all submissions"""
+    if request.user['user_type'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    from models.approval import ApprovalRequest, ApprovalHistory
+    
+    # Get all finalized/rejected requests as history
+    history = ApprovalRequest.query.filter(
+        ApprovalRequest.status.in_(['finalized', 'rejected'])
+    ).order_by(ApprovalRequest.finalized_at.desc().nullslast(), 
+               ApprovalRequest.rejected_at.desc().nullslast()).limit(100).all()
+    
+    return jsonify({
+        'history': [h.to_dict() for h in history],
+        'total': len(history),
+    })
+
+
+
+    # ==================== BLOCK GPA CALCULATION ====================
+
+@admin_bp.route('/api/block-gpa/check-department', methods=['POST'])
+@token_required
+def check_department_courses():
+    """
+    Check all students in a department's courses for an academic year.
+    Detects: missing students, pending references, double fails.
+    """
+    if request.user['user_type'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    from models.academic import Department, Course, CourseStudent
+    from models.reference import ReferenceGrade
+    from models.gpa import StudentGPA
+
+    data = request.get_json() or {}
+    department_id = data.get('department_id')
+    academic_year = data.get('academic_year', '2026/2027')
+    level = data.get('level', '')
+    semester = data.get('semester', '')
+
+    if not department_id:
+        return jsonify({'error': 'Department ID required'}), 400
+
+    department = Department.query.get(department_id)
+    if not department:
+        return jsonify({'error': 'Department not found'}), 404
+
+    # Get all courses for this department, year, level, semester
+    course_query = Course.query.filter_by(
+        department_id=department_id,
+        academic_year=academic_year,
+        is_active=True
+    )
+    if level:
+        course_query = course_query.filter_by(course_level=level)
+    if semester:
+        course_query = course_query.filter(Course.semester.like(f'%{semester}%'))
+
+    courses = course_query.all()
+
+    if not courses:
+        return jsonify({'error': 'No courses found for this department/year'}), 404
+
+    # Build course list
+    course_list = []
+    all_student_ids = set()
+    course_student_map = {}  # course_id -> set of student_ids
+
+    for course in courses:
+        students = CourseStudent.query.filter_by(course_id=course.id).all()
+        student_ids = set(s.student_id for s in students)
+        course_student_map[course.id] = student_ids
+        all_student_ids.update(student_ids)
+
+        course_list.append({
+            'id': course.id,
+            'course_code': course.course_code,
+            'course_name': course.course_name,
+            'semester': course.semester,
+            'student_count': len(students),
+            'assigned_lecturer': course.assigned_lecturer.full_name if course.assigned_lecturer else 'Not assigned',
+            'assigned_lecturer_id': course.assigned_lecturer_id,
+        })
+
+    # Check each student against all courses
+    student_report = []
+    missing_students = []
+    
+    for student_id in sorted(all_student_ids):
+        # Get student info
+        student = CourseStudent.query.filter_by(student_id=student_id).first()
+        student_name = student.student_name if student else 'Unknown'
+
+        student_courses = []
+        missing_from = []
+        has_pending_ref = False
+        has_double_fail = False
+        already_calculated = False
+
+        # Check if already calculated for this year/semester
+        existing_gpa = StudentGPA.query.filter_by(
+            student_id=student_id,
+            academic_year=academic_year,
+            level=level,
+            semester=semester
+        ).first()
+        if existing_gpa:
+            already_calculated = True
+
+        for course in courses:
+            if student_id in course_student_map.get(course.id, set()):
+                # Student is in this course - check grades
+                cs = CourseStudent.query.filter_by(
+                    course_id=course.id, student_id=student_id
+                ).first()
+                
+                ref = ReferenceGrade.query.filter_by(
+                    course_id=course.id, student_id=cs.id if cs else None
+                ).first()
+
+                grade_info = {
+                    'course_code': course.course_code,
+                    'course_name': course.course_name,
+                    'grade': cs.grade if cs else None,
+                    'score': cs.total_score if cs else None,
+                    'has_reference': False,
+                    'reference_status': None,
+                    'is_complete': cs and cs.total_score is not None,
+                }
+
+                if ref:
+                    grade_info['has_reference'] = True
+                    grade_info['reference_status'] = ref.reference_status
+                    if ref.reference_status == 'pending':
+                        has_pending_ref = True
+                    elif ref.reference_status == 'double_fail':
+                        has_double_fail = True
+
+                student_courses.append(grade_info)
+            else:
+                # Student is MISSING from this course
+                missing_from.append({
+                    'course_code': course.course_code,
+                    'course_name': course.course_name,
+                    'lecturer': course.assigned_lecturer.full_name if course.assigned_lecturer else 'Not assigned',
+                    'lecturer_id': course.assigned_lecturer_id,
+                })
+
+        student_report.append({
+            'student_id': student_id,
+            'student_name': student_name,
+            'courses': student_courses,
+            'missing_from': missing_from,
+            'has_pending_ref': has_pending_ref,
+            'has_double_fail': has_double_fail,
+            'already_calculated': already_calculated,
+            'status': 'calculated' if already_calculated else (
+                'blocked' if has_double_fail else (
+                    'pending_ref' if has_pending_ref else (
+                        'incomplete' if missing_from else 'ready'
+                    )
+                )
+            ),
+        })
+
+        if missing_from:
+            missing_students.append({
+                'student_id': student_id,
+                'student_name': student_name,
+                'missing_from': missing_from,
+            })
+
+    return jsonify({
+        'department': {
+            'id': department.id,
+            'name': department.name,
+            'faculty': department.faculty.name if department.faculty else 'N/A',
+        },
+        'academic_year': academic_year,
+        'level': level,
+        'semester': semester,
+        'courses': course_list,
+        'students': student_report,
+        'missing_students': missing_students,
+        'summary': {
+            'total_courses': len(courses),
+            'total_students': len(all_student_ids),
+            'ready_count': sum(1 for s in student_report if s['status'] == 'ready'),
+            'incomplete_count': sum(1 for s in student_report if s['status'] == 'incomplete'),
+            'pending_ref_count': sum(1 for s in student_report if s['status'] == 'pending_ref'),
+            'blocked_count': sum(1 for s in student_report if s['status'] == 'blocked'),
+            'calculated_count': sum(1 for s in student_report if s['status'] == 'calculated'),
+            'missing_count': len(missing_students),
+        },
+    })
+
+
+@admin_bp.route('/api/block-gpa/calculate', methods=['POST'])
+@token_required
+def calculate_block_gpa():
+    """
+    Calculate GPA for all ready students in a department.
+    Only calculates students with status='ready'.
+    """
+    if request.user['user_type'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    from models.academic import Department, Course, CourseStudent
+    from models.reference import ReferenceGrade
+    from models.gpa import StudentGPA
+
+    data = request.get_json() or {}
+    department_id = data.get('department_id')
+    academic_year = data.get('academic_year', '2026/2027')
+    level = data.get('level', '')
+    semester = data.get('semester', '')
+    student_ids = data.get('student_ids', [])  # Specific students to calculate (optional)
+
+    if not department_id:
+        return jsonify({'error': 'Department ID required'}), 400
+
+    # Get all courses for this department/year
+    course_query = Course.query.filter_by(
+        department_id=department_id,
+        academic_year=academic_year,
+        is_active=True
+    )
+    if level:
+        course_query = course_query.filter_by(course_level=level)
+    if semester:
+        course_query = course_query.filter(Course.semester.like(f'%{semester}%'))
+
+    courses = course_query.all()
+    
+    grade_map = {'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'E': 1.0, 'F': 0.0}
+    results = []
+    calculated_count = 0
+    skipped_count = 0
+
+    for course in courses:
+        students = CourseStudent.query.filter_by(course_id=course.id).all()
+        for cs in students:
+            # Only calculate specific students if provided
+            if student_ids and cs.student_id not in student_ids:
+                continue
+
+            # Skip if already calculated
+            existing = StudentGPA.query.filter_by(
+                student_id=cs.student_id,
+                academic_year=academic_year,
+                level=level,
+                semester=semester
+            ).first()
+            if existing:
+                skipped_count += 1
+                continue
+
+            # Check references
+            ref = ReferenceGrade.query.filter_by(
+                course_id=course.id, student_id=cs.id
+            ).first()
+
+            if ref:
+                if ref.reference_status == 'pending':
+                    skipped_count += 1
+                    continue
+                elif ref.reference_status == 'double_fail':
+                    skipped_count += 1
+                    continue
+
+            # Calculate GPA for this student
+            all_grades = CourseStudent.query.filter_by(
+                student_id=cs.student_id
+            ).join(Course).filter(
+                Course.department_id == department_id,
+                Course.academic_year == academic_year
+            ).all()
+
+            total_credits = 0
+            total_points = 0
+
+            for grade_entry in all_grades:
+                if grade_entry.total_score is None:
+                    continue
+                
+                credits = grade_entry.course.credit_hours if grade_entry.course else 0
+                ref_entry = ReferenceGrade.query.filter_by(
+                    course_id=grade_entry.course_id, student_id=grade_entry.id
+                ).first()
+
+                effective_credits = credits
+                effective_grade = grade_entry.grade
+                effective_points = grade_entry.grade_points or 0
+
+                if ref_entry:
+                    if ref_entry.reference_status == 'cleared' and ref_entry.reference_grade:
+                        effective_grade = ref_entry.reference_grade
+                        effective_points = grade_map.get(ref_entry.reference_grade, 0.0)
+                        effective_credits = credits * 2
+                    elif ref_entry.reference_status in ['double_fail', 'pending']:
+                        effective_points = 0.0
+
+                total_credits += effective_credits
+                total_points += effective_credits * effective_points
+
+            gpa = total_points / total_credits if total_credits > 0 else 0
+
+            if gpa >= 3.0:
+                status = 'PASS'
+            elif gpa >= 2.7:
+                status = 'FAIL'
+            else:
+                status = 'WITHDREW'
+
+            # Save GPA
+            gpa_record = StudentGPA(
+                student_id=cs.student_id,
+                student_name=cs.student_name,
+                level=level,
+                semester=semester,
+                academic_year=academic_year,
+                total_credit_hours=total_credits,
+                total_grade_points=total_points,
+                gpa=gpa,
+                student_status=status,
+                calculated_by_id=request.user['user_id'],
+            )
+            db.session.add(gpa_record)
+            calculated_count += 1
+
+    db.session.commit()
+
+    return jsonify({
+        'message': f'Calculated {calculated_count} GPAs, skipped {skipped_count}',
+        'calculated': calculated_count,
+        'skipped': skipped_count,
+    })
+
+
+
+@admin_bp.route('/api/block-gpa/notify-missing', methods=['POST'])
+@token_required
+def notify_missing_students():
+    """
+    Send notifications to HOD about missing students.
+    HOD can then forward to the responsible lecturer.
+    """
+    if request.user['user_type'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    from models.notification import Notification
+    from models.academic import Department, Course
+    from models.user import Lecturer
+
+    data = request.get_json() or {}
+    department_id = data.get('department_id')
+    missing_students = data.get('missing_students', [])
+
+    if not missing_students:
+        return jsonify({'message': 'No missing students to notify'}), 200
+
+    # Find HOD for this department
+    hod = Lecturer.query.filter_by(
+        department_id=department_id, role='head_of_department'
+    ).first()
+
+    if not hod:
+        return jsonify({'error': 'No HOD found for this department'}), 404
+
+    notified = 0
+    for student in missing_students:
+        student_name = student.get('student_name', 'Unknown')
+        student_id = student.get('student_id', 'Unknown')
+        
+        for missing in student.get('missing_from', []):
+            course_code = missing.get('course_code', 'Unknown')
+            lecturer_name = missing.get('lecturer', 'Unknown')
+            lecturer_id = missing.get('lecturer_id')
+
+            # Notify HOD
+            db.session.add(Notification(
+                user_id=hod.id,
+                user_type='lecturer',
+                title='Missing Student Detected',
+                message=f'{student_name} ({student_id}) is missing from {course_code}. Lecturer: {lecturer_name}',
+                notification_type='info',
+                request_id=None,
+            ))
+            notified += 1
+
+    db.session.commit()
+    return jsonify({
+        'message': f'Sent {notified} notifications to HOD ({hod.full_name})',
+        'notified_count': notified,
+    })
+
+
+@admin_bp.route('/api/block-gpa/notify-lecturer', methods=['POST'])
+@token_required
+def notify_lecturer_missing():
+    """
+    HOD forwards missing student notification to the specific lecturer.
+    """
+    if request.user['user_type'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    from models.notification import Notification
+
+    data = request.get_json() or {}
+    lecturer_id = data.get('lecturer_id')
+    student_name = data.get('student_name', 'Unknown')
+    student_id = data.get('student_id', 'Unknown')
+    course_code = data.get('course_code', 'Unknown')
+
+    if not lecturer_id:
+        return jsonify({'error': 'Lecturer ID required'}), 400
+
+    db.session.add(Notification(
+        user_id=lecturer_id,
+        user_type='lecturer',
+        title='Student Missing from Your Course',
+        message=f'Please add {student_name} ({student_id}) to {course_code}. They are missing from your course roster.',
+        notification_type='info',
+        request_id=None,
+    ))
+    db.session.commit()
+
+    return jsonify({'message': f'Notification sent to lecturer'})
+
+
+# Also add this to lecturer routes so HOD can forward from their side

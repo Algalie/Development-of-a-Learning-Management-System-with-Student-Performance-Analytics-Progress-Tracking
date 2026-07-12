@@ -19,6 +19,7 @@ class ApprovalRequest(db.Model):
     target_faculty_id = db.Column(db.Integer, db.ForeignKey('faculties.id'), nullable=True)
     target_faculty = db.relationship('Faculty', foreign_keys=[target_faculty_id])
     status = db.Column(db.String(30), default='draft')
+    signature = db.Column(db.String(200), nullable=True)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
     finalized_at = db.Column(db.DateTime, nullable=True)
     rejected_at = db.Column(db.DateTime, nullable=True)
@@ -44,6 +45,7 @@ class ApprovalRequest(db.Model):
             'creator_role': self.creator_role,
             'current_level': self.current_level,
             'status': self.status,
+            'signature': self.signature,
             'status_display': self.get_status_display(),
             'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None,
             'finalized_at': self.finalized_at.isoformat() if self.finalized_at else None,
