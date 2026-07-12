@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
@@ -11,7 +11,8 @@ import {
   FaBuilding, FaUsers, FaChevronDown, FaExclamationTriangle,
   FaCheckCircle, FaTimesCircle, FaFileAlt,
   FaSave, FaTimes, FaPrint, FaShieldAlt, FaUniversity, FaCalendarAlt,
-  FaSyncAlt, FaIdCard, FaBookOpen, FaBarcode
+  FaSyncAlt, FaIdCard, FaBookOpen, FaBarcode, FaClock,
+  FaToggleOn, FaToggleOff, FaBan, FaLock
 } from 'react-icons/fa';
 import Barcode from 'react-barcode';
 import logo from '../../assets/images/logo.png';
@@ -33,13 +34,15 @@ const Transcript = () => {
   const [transcriptId, setTranscriptId] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState('');
-  const [existingTranscriptId, setExistingTranscriptId] = useState('');
 
   const [verifyId, setVerifyId] = useState('');
   const [verifyResult, setVerifyResult] = useState(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [showVerifyTranscript, setShowVerifyTranscript] = useState(false);
   const [verifyTranscriptData, setVerifyTranscriptData] = useState(null);
+
+  // Override mode for demo/testing
+  const [overrideMode, setOverrideMode] = useState(false);
 
   const cardBg = 'var(--card-bg)';
   const border = 'var(--border)';
@@ -98,6 +101,7 @@ const Transcript = () => {
       PASS: { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' },
       FAIL: { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
       WITHDREW: { bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
+      DOUBLE_FAIL: { bg: '#fdf2f8', color: '#be185d', border: '#fbcfe8' },
     };
     const s = styles[status] || { bg: cardBgHover, color: textSec, border: border };
     return (
@@ -106,7 +110,7 @@ const Transcript = () => {
         fontWeight: 700, background: s.bg, color: s.color,
         border: `1px solid ${s.border}`, letterSpacing: '0.5px',
       }}>
-        {status || 'Pending'}
+        {status === 'DOUBLE_FAIL' ? 'DOUBLE FAIL' : status || 'Pending'}
       </span>
     );
   };
@@ -186,7 +190,16 @@ const Transcript = () => {
     return gradePoints[grade] || course.grade_points || 0;
   };
 
-  const handleSaveTranscript = async () => {
+  // Generate AND auto-save transcript
+  const handleGenerateTranscript = async () => {
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randomPart = Math.floor(1000 + Math.random() * 9000);
+    const newId = `MMTU-TRN-${datePart}-${randomPart}`;
+    setTranscriptId(newId);
+    setSavedId('');
+    setShowTranscript(true);
+
+    // Auto-save immediately
     setSaving(true);
     try {
       const response = await adminApi.saveTranscript({
@@ -194,8 +207,8 @@ const Transcript = () => {
         student_name: studentName,
         program_type: getProgramType(),
         department_name: deptData?.department?.name || 'N/A',
-        existing_transcript_id: existingTranscriptId || null,
-        generated_transcript_id: transcriptId,
+        existing_transcript_id: null,
+        generated_transcript_id: newId,
         transcript_data: {
           semesters: studentData,
           cgpa: calculateCGPA(),
@@ -203,20 +216,14 @@ const Transcript = () => {
           totalCredits: getTotalCredits(),
           generatedBy: user?.full_name || 'Admin',
           generatedAt: new Date().toISOString(),
+          overrideMode: overrideMode,
         }
       });
-      
-      if (response.data.previous_id_invalidated) {
-        toast.success(`Previous invalidated. New ID: ${response.data.transcript_id}`);
-      } else {
-        toast.success(`Transcript saved! ID: ${response.data.transcript_id}`);
-      }
-      
       setSavedId(response.data.transcript_id);
       setTranscriptId(response.data.transcript_id);
-      setExistingTranscriptId(response.data.transcript_id);
+      toast.success('Transcript generated and saved automatically!');
     } catch (error) {
-      toast.error('Failed to save transcript');
+      console.error('Auto-save error:', error);
     } finally {
       setSaving(false);
     }
@@ -252,7 +259,15 @@ const Transcript = () => {
     if (details) details.style.display = details.style.display === 'block' ? 'none' : 'block';
   };
 
+  // Check transcript eligibility
   const hasWarnings = studentData?.some(s => ['FAIL', 'WITHDREW', 'DOUBLE_FAIL'].includes(s.status));
+  const hasDoubleFail = studentData?.some(s => s.status === 'DOUBLE_FAIL' || s.has_double_fail);
+  const hasCompletedFinalYear = studentData?.some(sem => 
+    sem.level === 'Year 4' || sem.level === 'Level 400' || 
+    sem.level === 'Year 5' || sem.level === 'Level 500'
+  );
+  const canGenerateTranscript = overrideMode || (!hasDoubleFail && !hasWarnings && hasCompletedFinalYear && studentData?.length > 0);
+  
   const cgpa = calculateCGPA();
 
   return (
@@ -295,7 +310,7 @@ const Transcript = () => {
                     <img src={logo} alt="MMTU Logo" style={{ width: '70px', height: '70px', objectFit: 'contain', borderRadius: '16px' }} onError={(e) => { e.target.style.display = 'none'; }} />
                     <div>
                       <h2 style={{ color: '#0A2A66', fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>MILTON MARGAI TECHNICAL UNIVERSITY</h2>
-                      <p style={{ color: '#64748b', fontSize: '0.75rem', margin: '2px 0 0' }}>Goderich Campus, Freetown • Sierra Leone</p>
+                      <p style={{ color: '#64748b', fontSize: '0.75rem', margin: '2px 0 0' }}>Goderich Campus, Freetown | Sierra Leone</p>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
@@ -325,47 +340,60 @@ const Transcript = () => {
                         </div>
                       </div>
                     ))}
+                    {overrideMode && (
+                      <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                        <div style={{ color: '#dc2626', fontSize: '0.9rem', marginTop: '2px' }}><FaExclamationTriangle /></div>
+                        <div>
+                          <div style={{ fontSize: '0.65rem', color: '#dc2626', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: '2px' }}>Note</div>
+                          <div style={{ fontSize: '0.88rem', color: '#dc2626', fontWeight: 600 }}>Demo Mode — Override Active</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Semester Sections */}
                 {studentData?.map((semester, i) => (
                   <div key={i} style={{ marginBottom: '1.2rem', pageBreakInside: 'avoid' }}>
-                    <div style={{ background: 'linear-gradient(135deg, #0A2A66 0%, #1e40af 100%)', color: 'white', padding: '0.7rem 1.5rem', borderRadius: '16px 16px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: semester.status === 'DOUBLE_FAIL' ? 'linear-gradient(135deg, #831843 0%, #be185d 100%)' : semester.status === 'FAIL' || semester.status === 'WITHDREW' ? 'linear-gradient(135deg, #991b1b 0%, #dc2626 100%)' : 'linear-gradient(135deg, #0A2A66 0%, #1e40af 100%)', color: 'white', padding: '0.7rem 1.5rem', borderRadius: '16px 16px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{semester.academic_year} — {semester.level} {semester.semester}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                         <span style={{ fontSize: '0.78rem', opacity: 0.9 }}>GPA: <strong>{semester.gpa != null ? semester.gpa.toFixed(2) : 'N/A'}</strong></span>
-                        <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.68rem', fontWeight: 700, background: 'rgba(255,255,255,0.2)' }}>{semester.status || 'N/A'}</span>
+                        <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.68rem', fontWeight: 700, background: 'rgba(255,255,255,0.2)' }}>{semester.status === 'DOUBLE_FAIL' ? 'DOUBLE FAIL' : semester.status || 'N/A'}</span>
                       </div>
                     </div>
                     <div style={{ border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 16px 16px', overflow: 'hidden' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                         <thead>
                           <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                            <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Code</th>
-                            <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Course Title</th>
-                            <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>CR</th>
-                            <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Grade</th>
-                            <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>GP</th>
-                            <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Remark</th>
+                            <th style={thStyle}>Code</th><th style={thStyle}>Course Title</th><th style={thStyle}>CR</th><th style={thStyle}>Grade</th><th style={thStyle}>GP</th><th style={thStyle}>Remark</th>
                           </tr>
                         </thead>
                         <tbody>
                           {semester.courses?.map((course, j) => {
                             const effectiveGrade = getEffectiveGrade(course);
                             const isCleared = course.has_reference && course.reference_display;
+                            const isDoubleFail = course.reference_status === 'double_fail';
                             return (
-                              <tr key={j} style={{ borderBottom: '1px solid #f1f5f9', background: j % 2 === 0 ? 'white' : '#fafbfc' }}>
-                                <td style={{ padding: '9px 16px', fontWeight: 700, color: '#0A2A66', fontSize: '0.8rem' }}>{course.course_code}</td>
-                                <td style={{ padding: '9px 16px', color: '#334155', fontSize: '0.8rem' }}>{course.course_name}</td>
-                                <td style={{ padding: '9px 16px', textAlign: 'center', fontWeight: 600, color: '#475569' }}>{course.credit_hours}</td>
-                                <td style={{ padding: '9px 16px', textAlign: 'center' }}>
+                              <tr key={j} style={{ borderBottom: '1px solid #f1f5f9', background: isDoubleFail ? '#fdf2f8' : j % 2 === 0 ? 'white' : '#fafbfc' }}>
+                                <td style={tdStyle}><strong style={{ color: '#0A2A66' }}>{course.course_code}</strong></td>
+                                <td style={tdStyle}>{course.course_name}</td>
+                                <td style={{ ...tdStyle, textAlign: 'center' }}>{course.credit_hours}</td>
+                                <td style={{ ...tdStyle, textAlign: 'center' }}>
                                   <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, color: getGradeColor(effectiveGrade), background: getGradeBg(effectiveGrade) }}>{effectiveGrade || '—'}</span>
-                                  {isCleared && <span style={{ fontSize: '0.6rem', display: 'block', color: '#059669', fontWeight: 600, marginTop: '3px' }}>✓ Cleared</span>}
+                                  {isCleared && <span style={{ fontSize: '0.6rem', display: 'block', color: '#059669', fontWeight: 600, marginTop: '3px' }}>Cleared</span>}
+                                  {isDoubleFail && <span style={{ fontSize: '0.6rem', display: 'block', color: '#be185d', fontWeight: 600, marginTop: '3px' }}>Double Fail</span>}
                                 </td>
-                                <td style={{ padding: '9px 16px', textAlign: 'center', fontWeight: 600, color: '#475569' }}>{getEffectivePoints(course).toFixed(1)}</td>
-                                <td style={{ padding: '9px 16px', textAlign: 'center', fontSize: '0.73rem', fontWeight: 600 }}>
-                                  {effectiveGrade === 'A' ? <span style={{ color: '#059669' }}>Excellent</span> : effectiveGrade === 'B' ? <span style={{ color: '#2563eb' }}>Very Good</span> : effectiveGrade === 'C' ? <span style={{ color: '#d97706' }}>Good</span> : effectiveGrade === 'D' ? <span style={{ color: '#ea580c' }}>Pass</span> : effectiveGrade === 'E' ? <span style={{ color: '#dc2626' }}>Marginal Fail</span> : effectiveGrade === 'F' ? <span style={{ color: '#991b1b' }}>Fail</span> : <span style={{ color: '#94a3b8' }}>—</span>}
+                                <td style={{ ...tdStyle, textAlign: 'center' }}>{getEffectivePoints(course).toFixed(1)}</td>
+                                <td style={{ ...tdStyle, textAlign: 'center' }}>
+                                  {isDoubleFail ? <span style={{ color: '#be185d', fontWeight: 600 }}>Must Repeat</span> :
+                                   effectiveGrade === 'A' ? <span style={{ color: '#059669' }}>Excellent</span> : 
+                                   effectiveGrade === 'B' ? <span style={{ color: '#2563eb' }}>Very Good</span> : 
+                                   effectiveGrade === 'C' ? <span style={{ color: '#d97706' }}>Good</span> : 
+                                   effectiveGrade === 'D' ? <span style={{ color: '#ea580c' }}>Pass</span> : 
+                                   effectiveGrade === 'E' ? <span style={{ color: '#dc2626' }}>Marginal Fail</span> : 
+                                   effectiveGrade === 'F' ? <span style={{ color: '#991b1b' }}>Fail</span> : 
+                                   <span style={{ color: '#94a3b8' }}>—</span>}
                                 </td>
                               </tr>
                             );
@@ -407,7 +435,7 @@ const Transcript = () => {
                   ))}
                 </div>
 
-                {/* ==================== BARCODE SECTION ==================== */}
+                {/* Barcode */}
                 {transcriptId && (
                   <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '2px solid #e2e8f0', textAlign: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
@@ -417,7 +445,7 @@ const Transcript = () => {
                     <div style={{ display: 'flex', justifyContent: 'center', background: 'white', padding: '1.2rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                       <Barcode value={transcriptId} width={1.8} height={55} fontSize={10} format="CODE128" displayValue={true} renderer="svg" />
                     </div>
-                    <p style={{ fontSize: '0.6rem', color: '#94a3b8', marginTop: '0.6rem' }}>Scan this barcode with the MMTU mobile app to verify transcript authenticity</p>
+                    <p style={{ fontSize: '0.6rem', color: '#94a3b8', marginTop: '0.6rem' }}>Scan this barcode to verify transcript authenticity</p>
                   </div>
                 )}
 
@@ -425,16 +453,17 @@ const Transcript = () => {
                 <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '2px solid #0A2A66', textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '4px' }}>
                     <FaShieldAlt style={{ color: '#059669', fontSize: '0.7rem' }} />
-                    <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Official Document • Electronically Generated</span>
+                    <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Official Document | Electronically Generated</span>
+                    {overrideMode && <span style={{ fontSize: '0.68rem', color: '#dc2626', fontWeight: 700, marginLeft: '0.5rem' }}>(Demo Mode)</span>}
                   </div>
-                  <p style={{ fontSize: '0.65rem', color: '#94a3b8', margin: '2px 0' }}>This transcript is valid without physical signature. {transcriptId && <span style={{ display: 'block', marginTop: '3px', color: '#0A2A66', fontWeight: 700 }}>ID: {transcriptId}</span>}</p>
+                  <p style={{ fontSize: '0.65rem', color: '#94a3b8', margin: '2px 0' }}>This transcript is valid without physical signature. ID: {transcriptId}</p>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="no-print" style={{ borderTop: '2px solid #e2e8f0', padding: '1.2rem 2rem', display: 'flex', gap: '0.8rem', justifyContent: 'flex-end', background: '#f8fafc', borderRadius: '0 0 24px 24px', position: 'sticky', bottom: 0 }}>
                 <button onClick={handleDownloadTranscript} style={{ padding: '0.65rem 1.5rem', borderRadius: '30px', border: '2px solid #e2e8f0', background: 'white', color: '#475569', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif' }}><FaPrint /> Print</button>
-                <button onClick={handleSaveTranscript} disabled={saving} style={{ padding: '0.65rem 1.5rem', borderRadius: '30px', border: 'none', background: 'linear-gradient(135deg, #0A2A66, #1e40af)', color: 'white', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif', opacity: saving ? 0.7 : 1, boxShadow: '0 4px 15px rgba(10,42,102,0.3)' }}>{saving ? <FaSpinner className="animate-spin" /> : savedId ? <FaSyncAlt /> : <FaSave />}{saving ? 'Saving...' : savedId ? 'Update Transcript' : 'Save Transcript'}</button>
+                {saving && <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#16a34a', fontSize: '0.85rem', fontWeight: 500 }}><FaCheckCircle /> Auto-saved: {savedId}</span>}
                 <button onClick={() => { setShowTranscript(false); }} style={{ padding: '0.65rem 1.5rem', borderRadius: '30px', border: '2px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif' }}><FaTimes /> Close</button>
               </div>
             </motion.div>
@@ -448,7 +477,7 @@ const Transcript = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15,23,42,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1.5rem', backdropFilter: 'blur(8px)' }}>
             <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} style={{ background: cardBg, borderRadius: '24px', maxWidth: '550px', width: '100%', padding: '2.5rem', textAlign: 'center', boxShadow: '0 30px 80px rgba(0,0,0,0.4)' }}>
               <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', border: '3px solid #a7f3d0' }}><FaCheckCircle style={{ color: '#059669', fontSize: '2.2rem' }} /></div>
-              <h2 style={{ color: '#059669', fontSize: '1.3rem', fontWeight: 800, margin: '0 0 0.5rem' }}>✓ Verified Authentic Transcript</h2>
+              <h2 style={{ color: '#059669', fontSize: '1.3rem', fontWeight: 800, margin: '0 0 0.5rem' }}>Verified Authentic Transcript</h2>
               <p style={{ color: textSec, fontSize: '0.9rem', margin: '0 0 1.5rem', lineHeight: 1.6 }}>This transcript has been verified as authentic from MMTU Examinations Office.</p>
               <div style={{ background: cardBgHover, borderRadius: '16px', padding: '1.5rem', textAlign: 'left', marginBottom: '1.5rem' }}>
                 {[['Student Name', verifyTranscriptData.student_name],['Student ID', verifyTranscriptData.student_id],['Transcript ID', verifyTranscriptData.transcript_id],['Generated By', verifyTranscriptData.generated_by_name],['Date', new Date(verifyTranscriptData.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })],['Status', 'Active & Valid']].map(([label, value], i) => (
@@ -472,6 +501,33 @@ const Transcript = () => {
         </div>
       </FadeIn>
 
+      {/* Override Mode Toggle */}
+      <div style={{ background: overrideMode ? '#fef2f2' : cardBg, borderRadius: '14px', padding: '1rem 1.5rem', marginBottom: '1.5rem', border: `1px solid ${overrideMode ? '#fecaca' : border}`, boxShadow: shadowSm, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {overrideMode ? <FaToggleOn style={{ color: '#dc2626', fontSize: '1.5rem' }} /> : <FaToggleOff style={{ color: textMuted, fontSize: '1.5rem' }} />}
+          <div>
+            <div style={{ fontWeight: 600, color: overrideMode ? '#dc2626' : '#0A2A66', fontSize: '0.95rem' }}>
+              {overrideMode ? 'Demo Override Active' : 'Transcript Restrictions Enforced'}
+            </div>
+            <p style={{ color: textSec, fontSize: '0.8rem', margin: '2px 0 0' }}>
+              {overrideMode ? 'Transcript generation allowed at any stage for testing/demo purposes.' : 'Transcript only available after final year with no academic issues.'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setOverrideMode(!overrideMode)}
+          style={{
+            padding: '0.5rem 1.2rem', borderRadius: '8px',
+            background: overrideMode ? '#dc2626' : '#0A2A66',
+            color: 'white', border: 'none', cursor: 'pointer',
+            fontWeight: 600, fontSize: '0.85rem', fontFamily: 'Inter, sans-serif',
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+          }}>
+          {overrideMode ? <FaLock /> : <FaToggleOn />}
+          {overrideMode ? 'Disable Override' : 'Enable Demo Override'}
+        </button>
+      </div>
+
       {/* Student Transcript */}
       <div style={{ background: cardBg, borderRadius: '20px', padding: '1.8rem', marginBottom: '1.5rem', border: `1px solid ${border}`, boxShadow: shadowSm }}>
         <h2 style={{ color: '#0A2A66', fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FaUserGraduate style={{ color: '#0A2A66' }} /> Student Transcript</h2>
@@ -487,25 +543,80 @@ const Transcript = () => {
         {studentData && (
           <div style={{ borderTop: `1px solid ${border}`, paddingTop: '1.25rem', marginTop: '0.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
-              <h3 style={{ color: '#0A2A66', fontSize: '1rem', fontWeight: 600, margin: 0 }}>Student: {studentName} ({studentId})</h3>
-              <button onClick={() => { const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, ''); const randomPart = Math.floor(1000 + Math.random() * 9000); const newId = `MMTU-TRN-${datePart}-${randomPart}`; setTranscriptId(newId); setSavedId(''); setExistingTranscriptId(''); setShowTranscript(true); }} style={{ padding: '0.7rem 1.5rem', borderRadius: '30px', border: 'none', background: 'linear-gradient(135deg, #0A2A66, #1e40af)', color: 'white', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif', boxShadow: '0 4px 15px rgba(10,42,102,0.3)' }}><FaFileAlt /> Generate Transcript</button>
+              <h3 style={{ color: '#0A2A66', fontSize: '1rem', fontWeight: 600, margin: 0 }}>
+                Student: {studentName} ({studentId})
+              </h3>
+
+              {/* Generate Button */}
+              {hasDoubleFail ? (
+                <div style={{ padding: '0.7rem 1.2rem', borderRadius: '30px', background: '#fdf2f8', color: '#be185d', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #fbcfe8' }}>
+                  <FaBan /> Cannot Generate — Double Fail
+                </div>
+              ) : !canGenerateTranscript && !overrideMode ? (
+                <div style={{ padding: '0.7rem 1.2rem', borderRadius: '30px', background: '#f1f5f9', color: '#64748b', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #e2e8f0' }}>
+                  <FaClock /> Transcript Available After Final Year
+                </div>
+              ) : (
+                <button onClick={handleGenerateTranscript} style={{ 
+                  padding: '0.7rem 1.5rem', borderRadius: '30px', border: 'none', 
+                  background: overrideMode ? 'linear-gradient(135deg, #dc2626, #991b1b)' : 'linear-gradient(135deg, #0A2A66, #1e40af)', 
+                  color: 'white', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', 
+                  gap: '0.5rem', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif', 
+                  boxShadow: '0 4px 15px rgba(10,42,102,0.3)' 
+                }}>
+                  <FaFileAlt /> Generate & Save Transcript
+                </button>
+              )}
             </div>
 
-            {hasWarnings && (
-              <div style={{ background: '#fef2f2', borderLeft: '4px solid #dc2626', padding: '0.8rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-                <FaExclamationTriangle style={{ color: '#dc2626', marginTop: '2px' }} />
-                <div><div style={{ fontWeight: 600, color: '#991b1b', fontSize: '0.9rem' }}>Academic Alert</div><p style={{ color: '#991b1b', fontSize: '0.85rem', margin: 0 }}>This student has a FAIL, WITHDREW, or DOUBLE_FAIL status in one or more semesters.</p></div>
+            {/* Double Fail Warning */}
+            {hasDoubleFail && (
+              <div style={{ background: '#fdf2f8', borderLeft: '4px solid #be185d', padding: '0.8rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <FaBan style={{ color: '#be185d', marginTop: '2px' }} />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#831843', fontSize: '0.9rem' }}>Double Reference Failure Detected</div>
+                  <p style={{ color: '#831843', fontSize: '0.85rem', margin: 0 }}>
+                    This student has a double fail reference and must repeat the course(s). Transcript generation is blocked.
+                  </p>
+                </div>
               </div>
             )}
 
+            {/* Warning for other failures */}
+            {!hasDoubleFail && hasWarnings && (
+              <div style={{ background: '#fef2f2', borderLeft: '4px solid #dc2626', padding: '0.8rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <FaExclamationTriangle style={{ color: '#dc2626', marginTop: '2px' }} />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#991b1b', fontSize: '0.9rem' }}>Academic Issues Detected</div>
+                  <p style={{ color: '#991b1b', fontSize: '0.85rem', margin: 0 }}>
+                    This student has failures or withdrawals. These must be resolved before a transcript can be generated.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Not final year warning */}
+            {!hasWarnings && !hasDoubleFail && !hasCompletedFinalYear && !overrideMode && (
+              <div style={{ background: '#f0f4ff', borderLeft: '4px solid #0A2A66', padding: '0.8rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <FaClock style={{ color: '#0A2A66', marginTop: '2px' }} />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#0A2A66', fontSize: '0.9rem' }}>Final Year Not Yet Completed</div>
+                  <p style={{ color: '#0A2A66', fontSize: '0.85rem', margin: 0 }}>
+                    Transcript generation is only available after the student completes their final year. Enable Demo Override for testing.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Semester list */}
             {studentData.map((semester, i) => (
-              <div key={i} style={{ border: `1px solid ${border}`, borderRadius: '16px', marginBottom: '0.75rem', overflow: 'hidden' }}>
-                <div onClick={toggleSemester} style={{ background: cardBgHover, padding: '0.9rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+              <div key={i} style={{ border: `1px solid ${semester.status === 'DOUBLE_FAIL' ? '#fbcfe8' : border}`, borderRadius: '16px', marginBottom: '0.75rem', overflow: 'hidden' }}>
+                <div onClick={toggleSemester} style={{ background: semester.status === 'DOUBLE_FAIL' ? '#fdf2f8' : cardBgHover, padding: '0.9rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                   <h3 style={{ fontSize: '0.95rem', color: '#0A2A66', fontWeight: 600, margin: 0 }}>{semester.academic_year} — {semester.level} {semester.semester}</h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <span style={{ fontSize: '0.85rem', color: textSec }}>GPA: <strong>{semester.gpa != null ? semester.gpa.toFixed(2) : 'N/A'}</strong></span>
                     {getStatusBadge(semester.status)}
-                    <FaChevronDown style={{ fontSize: '0.7rem', color: textMuted, transition: 'transform 0.3s' }} />
+                    <FaChevronDown style={{ fontSize: '0.7rem', color: textMuted }} />
                   </div>
                 </div>
                 <div style={{ display: 'none', borderTop: `1px solid ${border}` }}>
@@ -522,14 +633,16 @@ const Transcript = () => {
                     </thead>
                     <tbody>
                       {semester.courses?.map((course, j) => (
-                        <tr key={j} style={{ borderBottom: `1px solid ${border}` }}>
+                        <tr key={j} style={{ borderBottom: `1px solid ${border}`, background: course.reference_status === 'double_fail' ? '#fdf2f8' : 'transparent' }}>
                           <td style={{ padding: '10px 16px', fontWeight: 600, color: '#0A2A66', fontSize: '0.85rem' }}>{course.course_code}</td>
                           <td style={{ padding: '10px 16px', color: textPri, fontSize: '0.85rem' }}>{course.course_name}</td>
                           <td style={{ padding: '10px 16px', textAlign: 'center', color: textPri }}>{course.credit_hours}</td>
                           <td style={{ padding: '10px 16px', textAlign: 'center', fontWeight: 600 }}>{course.grade || '—'}</td>
                           <td style={{ padding: '10px 16px', textAlign: 'center', color: textPri }}>{course.grade_points != null ? course.grade_points.toFixed(1) : '—'}</td>
                           <td style={{ padding: '10px 16px' }}>
-                            {course.has_reference ? (
+                            {course.reference_status === 'double_fail' ? (
+                              <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, background: '#fdf2f8', color: '#be185d' }}>Double Fail</span>
+                            ) : course.has_reference ? (
                               course.reference_display ? (
                                 <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, background: '#ecfdf5', color: '#059669' }}>{course.reference_display}</span>
                               ) : (
@@ -705,5 +818,8 @@ const Transcript = () => {
     </div>
   );
 };
+
+const thStyle = { padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' };
+const tdStyle = { padding: '9px 16px', color: '#334155', fontSize: '0.8rem' };
 
 export default Transcript;

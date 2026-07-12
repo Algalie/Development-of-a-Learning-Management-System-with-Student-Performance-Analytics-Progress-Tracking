@@ -12,7 +12,7 @@ import {
   FaClipboardCheck, FaBook, FaChartLine, FaSyncAlt, FaUsersCog, FaCalculator,
   FaFileAlt, FaExclamationTriangle, FaBell, FaArrowRight,
   FaCheckCircle, FaTimesCircle, FaSpinner, FaSun, FaMoon, FaCloudSun,
-  FaChartPie
+  FaChartPie, FaEdit
 } from 'react-icons/fa';
 
 const Dashboard = () => {
@@ -60,7 +60,7 @@ const Dashboard = () => {
   const mainActions = [
     {
       title: 'Exam Office Submissions',
-      desc: 'Review and process all submissions awaiting final approval as the Exam Officer.',
+      desc: 'Review and process all submissions awaiting final approval.',
       icon: <FaClipboardCheck />,
       stats: [
         { label: 'Pending', value: stats?.pending_at_exam || 0 },
@@ -71,7 +71,7 @@ const Dashboard = () => {
     },
     {
       title: 'Course Approvals',
-      desc: 'Monitor all course submissions and track their approval progress through HOD, Dean, and Exam Office.',
+      desc: 'Monitor all course submissions and track their approval progress.',
       icon: <FaBook />,
       stats: [
         { label: 'Total Courses', value: stats?.total_courses || 0 },
@@ -82,7 +82,7 @@ const Dashboard = () => {
     },
     {
       title: 'Grade Approvals',
-      desc: 'Track continuous assessment, exam, and reference grade submissions throughout the approval chain.',
+      desc: 'Track CA, exam, and combined grade submissions.',
       icon: <FaChartLine />,
       stats: [
         { label: 'Pending Grades', value: stats?.pending_grades_at_exam || 0 },
@@ -93,7 +93,7 @@ const Dashboard = () => {
     },
     {
       title: 'Reference Management',
-      desc: 'Query student references by ID, manage pending, cleared, and double fail references.',
+      desc: 'Query student references by ID, manage pending and cleared.',
       icon: <FaSyncAlt />,
       stats: [
         { label: 'Pending', value: stats?.pending_ref_status || 0 },
@@ -105,10 +105,11 @@ const Dashboard = () => {
   ];
 
   const secondaryActions = [
-    { title: 'User & Faculty Management', desc: 'Manage administrators, lecturers, faculties and departments', icon: <FaUsersCog />, link: '/admin/manage-users' },
-    { title: 'GPA Calculator', desc: 'Calculate student GPA with reference tracking and credit hour penalties', icon: <FaCalculator />, link: '/admin/gpa-calculator' },
-    { title: 'Transcript Management', desc: 'View student academic history and generate department student lists', icon: <FaFileAlt />, link: '/admin/transcript' },
-    { title: 'Failure & Withdrawal History', desc: 'Search and view failure, withdrawal, and double fail records', icon: <FaExclamationTriangle />, link: '/admin/failure-history' },
+    { title: 'User & Faculty Management', desc: 'Manage admins, lecturers, faculties and departments', icon: <FaUsersCog />, link: '/admin/manage-users' },
+    { title: 'Grade Edit Requests', desc: 'Review and process lecturer grade edit requests', icon: <FaEdit />, link: '/admin/grade-edit-requests' },
+    { title: 'GPA Calculator', desc: 'Calculate student GPA with reference tracking', icon: <FaCalculator />, link: '/admin/gpa-calculator' },
+    { title: 'Transcript Management', desc: 'View student academic history and generate transcripts', icon: <FaFileAlt />, link: '/admin/transcript' },
+    { title: 'Failure & Withdrawal History', desc: 'Search and view failure, withdrawal records', icon: <FaExclamationTriangle />, link: '/admin/failure-history' },
   ];
 
   return (
@@ -142,7 +143,7 @@ const Dashboard = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <FaBell style={{ color: '#ca8a04', fontSize: '1.1rem' }} />
             <span style={{ color: '#854d0e', fontSize: '0.9rem' }}>
-              <strong>{stats.unread_notifications}</strong> unread notification{stats.unread_notifications > 1 ? 's' : ''} waiting for your attention
+              <strong>{stats.unread_notifications}</strong> unread notification{stats.unread_notifications > 1 ? 's' : ''} waiting
             </span>
           </div>
           <Link to="/admin/notifications" style={{ color: '#0A2A66', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
@@ -273,38 +274,19 @@ const Dashboard = () => {
             overflow: 'hidden',
           }}
         >
-          <div style={{
-            position: 'absolute', top: -30, right: -30,
-            width: '150px', height: '150px', borderRadius: '50%',
-            background: 'rgba(255,193,7,0.1)',
-          }} />
-          <div style={{
-            position: 'absolute', bottom: -20, left: '50%',
-            width: '100px', height: '100px', borderRadius: '50%',
-            background: 'rgba(255,255,255,0.05)',
-          }} />
+          <div style={{ position: 'absolute', top: -30, right: -30, width: '150px', height: '150px', borderRadius: '50%', background: 'rgba(255,193,7,0.1)' }} />
+          <div style={{ position: 'absolute', bottom: -20, left: '50%', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', position: 'relative', zIndex: 1 }}>
-            <div style={{
-              width: '70px', height: '70px', borderRadius: '16px',
-              background: 'rgba(255,193,7,0.2)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              fontSize: '1.8rem', color: '#FFC107', flexShrink: 0,
-            }}>
+            <div style={{ width: '70px', height: '70px', borderRadius: '16px', background: 'rgba(255,193,7,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', color: '#FFC107', flexShrink: 0 }}>
               <FaChartPie />
             </div>
             <div style={{ flex: 1 }}>
-              <h3 style={{ color: 'white', fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                Analytics Dashboard
-              </h3>
+              <h3 style={{ color: 'white', fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.5rem' }}>Analytics Dashboard</h3>
               <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.5, margin: 0 }}>
-                View comprehensive charts, real-time statistics, and system performance metrics with interactive data visualizations.
+                View comprehensive charts, real-time statistics, and system performance metrics.
               </p>
             </div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              color: '#FFC107', fontWeight: 600, fontSize: '0.95rem',
-              whiteSpace: 'nowrap', position: 'relative', zIndex: 1,
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#FFC107', fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap', position: 'relative', zIndex: 1 }}>
               Open Analytics <FaArrowRight />
             </div>
           </div>
@@ -319,7 +301,7 @@ const Dashboard = () => {
       </FadeIn>
 
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
         gap: '1rem', marginBottom: '2rem',
       }}>
         {secondaryActions.map((action, i) => (

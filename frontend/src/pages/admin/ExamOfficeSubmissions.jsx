@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { adminApi } from '../../api/adminApi';
 import FadeIn from '../../components/animations/FadeIn';
 import ShakeOnMount from '../../components/animations/ShakeOnMount';
-import { FaArrowLeft, FaEye, FaCheck, FaTimes, FaSpinner, FaClipboardCheck, FaClock, FaCheckCircle, FaTimesCircle, FaFileAlt, FaBook, FaCalculator } from 'react-icons/fa';
+import { FaArrowLeft, FaEye, FaCheck, FaTimes, FaSpinner, FaClipboardCheck, FaClock, FaCheckCircle, FaTimesCircle, FaFileAlt, FaBook, FaCalculator, FaGraduationCap } from 'react-icons/fa';
 
 const ExamOfficeSubmissions = () => {
   const [activeTab, setActiveTab] = useState('pending');
@@ -29,7 +29,7 @@ const ExamOfficeSubmissions = () => {
   const handleApprove = async (id) => {
     setActionLoading(id);
     try {
-      await adminApi.approveSubmission(id);
+      await adminApi.examApprove(id);
       toast.success('Submission finalized!');
       fetchData();
     } catch (error) {
@@ -43,7 +43,7 @@ const ExamOfficeSubmissions = () => {
     if (!rejectModal.reason.trim()) { toast.error('Please enter a rejection reason'); return; }
     setActionLoading(rejectModal.requestId);
     try {
-      await adminApi.rejectSubmission(rejectModal.requestId, rejectModal.reason);
+      await adminApi.examReject(rejectModal.requestId, rejectModal.reason);
       toast.success('Submission rejected');
       setRejectModal({ open: false, requestId: null, reason: '' });
       fetchData();
@@ -62,6 +62,7 @@ const ExamOfficeSubmissions = () => {
 
   const typeConfig = {
     course: { label: 'Course', icon: <FaBook />, color: '#1e293b' },
+    grades: { label: 'Grades', icon: <FaGraduationCap />, color: '#0A2A66' },
     ca: { label: 'CA', icon: <FaCalculator />, color: '#475569' },
     exam: { label: 'Exam', icon: <FaFileAlt />, color: '#475569' },
     reference: { label: 'Reference', icon: <FaClipboardCheck />, color: '#475569' },
@@ -164,9 +165,6 @@ const ExamOfficeSubmissions = () => {
                     <div style={{ color: 'var(--text-muted)' }}>
                       <FaCheckCircle style={{ fontSize: '2.5rem', marginBottom: '1rem', color: 'var(--text-muted)' }} />
                       <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>No {activeTab} submissions</p>
-                      <p style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                        {activeTab === 'pending' ? 'All submissions have been processed.' : `No ${activeTab} submissions to display.`}
-                      </p>
                     </div>
                   </td>
                 </tr>

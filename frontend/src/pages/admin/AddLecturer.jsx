@@ -6,7 +6,7 @@ import ShakeOnMount from '../../components/animations/ShakeOnMount';
 import FadeIn from '../../components/animations/FadeIn';
 import { 
   FaArrowLeft, FaIdCard, FaUser, FaEnvelope, FaLock, FaPhone, 
-  FaGraduationCap, FaUserTag, FaUniversity, FaSitemap, 
+  FaGraduationCap, FaUserTag, FaUniversity, FaSitemap, FaSignature,
   FaTimes, FaSave, FaSpinner, FaInfoCircle 
 } from 'react-icons/fa';
 
@@ -25,6 +25,7 @@ const AddLecturer = () => {
     qualification: '',
     faculty_id: '',
     department_id: '',
+    signature: '',
   });
 
   useEffect(() => {
@@ -150,6 +151,14 @@ const AddLecturer = () => {
                 <label><FaGraduationCap style={{ color: '#FFC107' }} /> Qualification</label>
                 <input type="text" name="qualification" value={form.qualification} onChange={handleChange} placeholder="e.g., PhD, MSc, BSc" />
               </div>
+              
+              {/* ========== SIGNATURE FIELD (NEW) ========== */}
+              <div className="form-group">
+                <label><FaSignature style={{ color: '#FFC107' }} /> Digital Signature</label>
+                <input type="text" name="signature" value={form.signature} onChange={handleChange} placeholder="e.g., Dr. John Doe" />
+                <small>Used for signing grade submissions and approvals</small>
+              </div>
+              
               <div className="form-group full-width">
                 <label><FaUserTag style={{ color: '#FFC107' }} /> Role <span className="required-field"></span></label>
                 <select name="role" value={form.role} onChange={handleChange} required>

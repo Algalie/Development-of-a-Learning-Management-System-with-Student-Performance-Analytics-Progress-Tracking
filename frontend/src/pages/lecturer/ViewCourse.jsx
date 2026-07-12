@@ -9,7 +9,7 @@ import {
   FaArrowLeft, FaEdit, FaPaperPlane, FaRedoAlt, FaUserPlus, FaArchive,
   FaCalculator, FaGraduationCap, FaSyncAlt, FaTasks, FaUsers, FaClock,
   FaCalendarAlt, FaCheckCircle, FaTimesCircle, FaPencilAlt, FaSpinner,
-  FaExclamationTriangle, FaInfoCircle, FaBook
+  FaExclamationTriangle, FaInfoCircle, FaSignature, FaUndo
 } from 'react-icons/fa';
 
 const ViewCourse = () => {
@@ -18,8 +18,10 @@ const ViewCourse = () => {
   const [course, setCourse] = useState(null);
   const [activeTab, setActiveTab] = useState('students');
   const [loading, setLoading] = useState(true);
-  const [caData, setCaData] = useState(null);
-  const [examData, setExamData] = useState(null);
+  const [gradeData, setGradeData] = useState(null);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [signature, setSignature] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => { fetchCourse(); }, [id]);
 
@@ -28,22 +30,17 @@ const ViewCourse = () => {
       const res = await lecturerApi.viewCourse(id);
       const data = res.data;
       setCourse(data.course);
-      setCaData({
-        status: data.ca_status,
-        statusText: data.ca_status_text,
-        statusClass: data.ca_status_class,
-        canEdit: data.can_edit_ca,
-        showSubmit: data.show_submit_ca,
-      });
-      setExamData({
-        statusText: data.exam_status_text,
-        statusClass: data.exam_status_class,
-        caFinalized: data.ca_finalized,
-        hasScores: data.has_exam_scores,
-        approval: data.exam_approval,
+      setGradeData({
+        status: data.grade_status,
+        statusText: data.grade_status_text,
+        statusClass: data.grade_status_class,
+        canEdit: data.can_edit_grades,
+        showSubmit: data.show_submit_grades,
+        finalized: data.grades_finalized,
+        approval: data.grade_approval,
       });
     } catch (error) {
-      toast.error('Failed to load course');
+      toast.error('Failed to load course', { duration: 1000 });
       navigate('/lecturer/courses');
     } finally { setLoading(false); }
   };
@@ -51,40 +48,37 @@ const ViewCourse = () => {
   const handleSubmitCourse = async () => {
     try {
       await lecturerApi.submitForApproval('course', id);
-      toast.success('Course submitted for approval!');
+      toast.success('Course submitted for approval!', { duration: 1000 });
       fetchCourse();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit');
+      toast.error(error.response?.data?.message || 'Failed to submit', { duration: 1000 });
     }
   };
 
-  const handleSubmitCA = async () => {
+  const handleSubmitGrades = async () => {
+    if (!signature.trim()) {
+      toast.error('Please enter your signature', { duration: 1000 });
+      return;
+    }
+    setSubmitting(true);
     try {
-      await lecturerApi.submitForApproval('ca', id);
-      toast.success('CA submitted for approval!');
+      await lecturerApi.submitGrades(id, { signature });
+      toast.success('Grades submitted with signature!', { duration: 1000 });
+      setShowSignatureModal(false);
+      setSignature('');
       fetchCourse();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit CA');
-    }
-  };
-
-  const handleSubmitExam = async () => {
-    try {
-      await lecturerApi.submitForApproval('exam', id);
-      toast.success('Exam submitted for approval!');
-      fetchCourse();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit exam');
-    }
+      toast.error(error.response?.data?.message || 'Failed to submit grades', { duration: 1000 });
+    } finally { setSubmitting(false); }
   };
 
   const handleArchive = async () => {
     try {
       await lecturerApi.archiveCourse(id);
-      toast.success('Course archived');
+      toast.success('Course archived', { duration: 1000 });
       navigate('/lecturer/courses');
     } catch (error) {
-      toast.error('Failed to archive');
+      toast.error('Failed to archive', { duration: 1000 });
     }
   };
 
@@ -111,8 +105,9 @@ const ViewCourse = () => {
   const students = course.students || [];
   const assessments = course.assessments || [];
   const refGrades = course.reference_grades || [];
-  const scoredCount = students.filter(s => s.continuous_assessment != null).length;
-  const gradedCount = students.filter(s => s.exam_score != null).length;
+  const caMax = course.ca_max_score || 40;
+  const examMax = course.exam_max_score || 60;
+  const scoredCount = students.filter(s => s.continuous_assessment != null && s.exam_score != null).length;
   const refCount = students.filter(s => ['E', 'F'].includes(s.grade)).length;
 
   const cardBg = 'var(--card-bg)';
@@ -141,13 +136,14 @@ const ViewCourse = () => {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem',
       }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.85rem', color: textMuted, fontWeight: 500, fontFamily: 'monospace' }}>{course.course_code}</span>
             <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, background: cardBgHover, color: textSec, border: `1px solid ${border}` }}>{course.program_type}</span>
+            <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, background: '#f0f4ff', color: '#0A2A66' }}>CA: {caMax}% / Exam: {examMax}%</span>
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0A2A66', marginBottom: '0.3rem' }}>{course.course_name}</h2>
           <p style={{ color: textSec, fontSize: '0.85rem', margin: 0 }}>
-            Created by {course.created_by?.full_name || 'Unknown'} · {course.semester} · {course.academic_year}
+            Created by {course.created_by?.full_name || 'Unknown'} · Assigned to: {course.assigned_lecturer?.full_name || 'Not assigned'} · {course.semester} · {course.academic_year}
           </p>
         </div>
         <div>{getStatusBadge(course.approval_status)}</div>
@@ -186,100 +182,43 @@ const ViewCourse = () => {
         </>
       )}
 
-      {/* Course Approval Progress */}
-      {course.course_approval && course.course_approval.steps && (
-        <div style={{ background: cardBg, borderRadius: '14px', padding: '1.5rem', marginBottom: '1rem', border: `1px solid ${border}`, boxShadow: shadowSm }}>
-          <h3 style={{ color: '#0A2A66', fontSize: '0.95rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FaClipboardCheck style={{ color: '#0A2A66' }} /> Course Approval Progress
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', textAlign: 'center' }}>
-            {course.course_approval.steps.map((step, i) => {
-              const isApproved = step.status === 'approved';
-              const isPending = step.status === 'pending';
-              const isRejected = step.status === 'rejected';
-              return (
-                <div key={i} style={{
-                  padding: '1rem', borderRadius: '10px',
-                  background: isApproved ? '#f0fdf4' : isPending ? '#fefce8' : isRejected ? '#fef2f2' : cardBgHover,
-                  border: `1px solid ${isApproved ? '#bbf7d0' : isPending ? '#fde68a' : isRejected ? '#fecaca' : border}`,
-                }}>
-                  <div style={{ fontSize: '1.5rem', marginBottom: '0.3rem' }}>
-                    {isApproved ? '✅' : isPending ? '⏳' : isRejected ? '❌' : '⏭️'}
-                  </div>
-                  <div style={{ fontWeight: 700, color: '#0A2A66', fontSize: '0.9rem', textTransform: 'uppercase' }}>{step.level}</div>
-                  <div style={{ fontSize: '0.8rem', color: isApproved ? '#16a34a' : isPending ? '#ca8a04' : textSec, fontWeight: 500 }}>
-                    {step.status?.charAt(0).toUpperCase() + step.status?.slice(1)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* CA Section */}
+      {/* Combined Grades Section */}
       {course.approval_status === 'finalized' ? (
         <div style={{ background: cardBg, borderRadius: '14px', padding: '1.5rem', marginBottom: '1rem', border: `1px solid ${border}`, boxShadow: shadowSm }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            <FaCalculator style={{ color: '#0A2A66', fontSize: '1.2rem' }} />
-            <h3 style={{ color: '#0A2A66', fontSize: '1rem', fontWeight: 600, margin: 0 }}>Continuous Assessment (40 marks)</h3>
+            <FaGraduationCap style={{ color: '#0A2A66', fontSize: '1.2rem' }} />
+            <h3 style={{ color: '#0A2A66', fontSize: '1rem', fontWeight: 600, margin: 0 }}>
+              Grades (CA: {caMax} marks + Exam: {examMax} marks)
+            </h3>
           </div>
           <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap', background: cardBgHover, borderRadius: '8px', padding: '0.75rem 1rem' }}>
             <span style={{ fontSize: '0.85rem', color: textPri, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <FaTasks style={{ color: '#0A2A66' }} /> Status: <span style={{ fontWeight: 600 }}>{caData?.statusText || 'Not Submitted'}</span>
+              <FaTasks style={{ color: '#0A2A66' }} /> Status: <span style={{ fontWeight: 600 }}>{gradeData?.statusText || 'Not Submitted'}</span>
             </span>
             <span style={{ fontSize: '0.85rem', color: textPri, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <FaUsers style={{ color: '#0A2A66' }} /> Scored: <strong>{scoredCount}/{students.length}</strong>
+              <FaUsers style={{ color: '#0A2A66' }} /> Graded: <strong>{scoredCount}/{students.length}</strong>
             </span>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {caData?.canEdit && (
-              <Link to={`/lecturer/course/${id}/enter-ca`} className="btn btn-primary btn-sm"><FaEdit style={{ marginRight: '0.3rem' }} /> Enter CA Scores</Link>
+            {gradeData?.canEdit && (
+              <Link to={`/lecturer/course/${id}/enter-grades`} className="btn btn-primary btn-sm"><FaEdit style={{ marginRight: '0.3rem' }} /> Enter Grades</Link>
             )}
-            {caData?.showSubmit && (
-              <button onClick={handleSubmitCA} className="btn btn-success btn-sm"><FaPaperPlane style={{ marginRight: '0.3rem' }} /> Submit CA for Approval</button>
+            {gradeData?.showSubmit && (
+              <button onClick={() => setShowSignatureModal(true)} className="btn btn-success btn-sm"><FaSignature style={{ marginRight: '0.3rem' }} /> Sign & Submit Grades</button>
             )}
-            {caData?.status === 'rejected' && (
-              <button onClick={handleSubmitCA} className="btn btn-warning btn-sm"><FaRedoAlt style={{ marginRight: '0.3rem' }} /> Resubmit CA</button>
+            {gradeData?.status === 'rejected' && (
+              <button onClick={() => setShowSignatureModal(true)} className="btn btn-warning btn-sm"><FaRedoAlt style={{ marginRight: '0.3rem' }} /> Resubmit Grades</button>
+            )}
+            {gradeData?.finalized && (
+              <Link to={`/lecturer/course/${id}/request-grade-edit`} className="btn btn-outline btn-sm"><FaUndo style={{ marginRight: '0.3rem' }} /> Request Grade Edit</Link>
             )}
           </div>
         </div>
       ) : (
         <div style={{ background: 'var(--blue-bg)', border: '1px solid var(--blue-border)', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '1rem', color: 'var(--blue-text)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <FaInfoCircle /> CA section available after course is fully approved.
+          <FaInfoCircle /> Grade entry available after course is fully approved.
         </div>
       )}
-
-      {/* Exam Section */}
-      {examData?.caFinalized ? (
-        <div style={{ background: cardBg, borderRadius: '14px', padding: '1.5rem', marginBottom: '1rem', border: `1px solid ${border}`, boxShadow: shadowSm }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            <FaGraduationCap style={{ color: '#0A2A66', fontSize: '1.2rem' }} />
-            <h3 style={{ color: '#0A2A66', fontSize: '1rem', fontWeight: 600, margin: 0 }}>Exam Grades (60 marks)</h3>
-          </div>
-          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap', background: cardBgHover, borderRadius: '8px', padding: '0.75rem 1rem' }}>
-            <span style={{ fontSize: '0.85rem', color: textPri, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <FaTasks style={{ color: '#0A2A66' }} /> Status: <span style={{ fontWeight: 600 }}>{examData?.statusText || 'Not Submitted'}</span>
-            </span>
-            <span style={{ fontSize: '0.85rem', color: textPri, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <FaUsers style={{ color: '#0A2A66' }} /> Graded: <strong>{gradedCount}/{students.length}</strong>
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <Link to={`/lecturer/course/${id}/enter-exam`} className="btn btn-primary btn-sm"><FaEdit style={{ marginRight: '0.3rem' }} /> Enter Exam Grades</Link>
-            {examData?.hasScores && !examData?.approval && (
-              <button onClick={handleSubmitExam} className="btn btn-success btn-sm"><FaPaperPlane style={{ marginRight: '0.3rem' }} /> Submit Exam for Approval</button>
-            )}
-            {examData?.approval?.status === 'rejected' && (
-              <button onClick={handleSubmitExam} className="btn btn-warning btn-sm"><FaRedoAlt style={{ marginRight: '0.3rem' }} /> Resubmit Exam</button>
-            )}
-          </div>
-        </div>
-      ) : course.approval_status === 'finalized' ? (
-        <div style={{ background: 'var(--blue-bg)', border: '1px solid var(--blue-border)', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '1rem', color: 'var(--blue-text)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <FaInfoCircle /> Exam section available after CA is fully approved.
-        </div>
-      ) : null}
 
       {/* Reference Section */}
       <div style={{ background: cardBg, borderRadius: '14px', padding: '1.5rem', marginBottom: '1.5rem', border: `1px solid ${border}`, boxShadow: shadowSm }}>
@@ -306,11 +245,11 @@ const ViewCourse = () => {
           { icon: <FaCalendarAlt />, label: 'Semester', value: course.semester },
           { icon: <FaClock />, label: 'Credit Hours', value: course.credit_hours },
           { icon: <FaUsers />, label: 'Students', value: students.length },
-          { icon: <FaGraduationCap />, label: 'Program', value: course.program_type },
+          { icon: <FaGraduationCap />, label: 'Program', value: `${course.program_type} (CA:${caMax}/Exam:${examMax})` },
         ].map((item, i) => (
           <div key={i} style={{ background: cardBg, borderRadius: '10px', padding: '1.25rem', border: `1px solid ${border}`, textAlign: 'center', boxShadow: shadowSm }}>
             <div style={{ color: '#0A2A66', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{item.icon}</div>
-            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#0A2A66' }}>{item.value}</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0A2A66' }}>{item.value}</div>
             <div style={{ fontSize: '0.7rem', color: textMuted, textTransform: 'uppercase', fontWeight: 500, marginTop: '0.2rem' }}>{item.label}</div>
           </div>
         ))}
@@ -374,7 +313,7 @@ const ViewCourse = () => {
                 <tr style={{ background: cardBgHover, borderBottom: `2px solid ${border}` }}>
                   <th style={thStyle}>ID</th><th style={thStyle}>Name</th>
                   <th style={thStyle}>Test (20)</th><th style={thStyle}>Assign (10)</th><th style={thStyle}>Attend (10)</th>
-                  <th style={thStyle}>CA (40)</th><th style={thStyle}>Exam (60)</th><th style={thStyle}>Total (100)</th>
+                  <th style={thStyle}>CA ({caMax})</th><th style={thStyle}>Exam ({examMax})</th><th style={thStyle}>Total (100)</th>
                   <th style={thStyle}>Grade</th><th style={thStyle}>GP</th><th style={thStyle}>Ref</th>
                 </tr>
               </thead>
@@ -451,6 +390,62 @@ const ViewCourse = () => {
           <button onClick={handleArchive} className="btn btn-outline btn-sm" style={{ borderColor: '#dc2626', color: '#dc2626' }}>
             <FaArchive style={{ marginRight: '0.3rem' }} /> Archive Course
           </button>
+        </div>
+      )}
+
+      {/* Signature Modal */}
+      {showSignatureModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(15,23,42,0.7)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)',
+        }} onClick={() => setShowSignatureModal(false)}>
+          <div style={{
+            background: cardBg, borderRadius: '20px', padding: '2rem',
+            maxWidth: '420px', width: '90%', textAlign: 'center',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+            border: `1px solid ${border}`,
+          }} onClick={e => e.stopPropagation()}>
+            <FaSignature style={{ fontSize: '2rem', color: '#0A2A66', marginBottom: '1rem' }} />
+            <h3 style={{ color: '#0A2A66', marginBottom: '0.5rem' }}>Sign Your Submission</h3>
+            <p style={{ color: textSec, fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              Enter your full name as digital signature for this grade submission.
+            </p>
+            <input
+              type="text"
+              value={signature}
+              onChange={e => setSignature(e.target.value)}
+              placeholder="Type your full name"
+              style={{
+                width: '100%', padding: '0.75rem', borderRadius: '10px',
+                border: `1.5px solid ${border}`, fontSize: '0.9rem',
+                fontFamily: 'Inter, sans-serif', marginBottom: '1.5rem',
+                textAlign: 'center',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setShowSignatureModal(false)}
+                style={{
+                  flex: 1, padding: '0.7rem', borderRadius: '10px',
+                  background: cardBgHover, border: `1px solid ${border}`,
+                  cursor: 'pointer', fontWeight: 500, fontFamily: 'Inter, sans-serif',
+                }}
+              >Cancel</button>
+              <button
+                onClick={handleSubmitGrades}
+                disabled={submitting || !signature.trim()}
+                style={{
+                  flex: 1, padding: '0.7rem', borderRadius: '10px',
+                  background: '#0A2A66', color: 'white', border: 'none',
+                  cursor: 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif',
+                  opacity: submitting ? 0.7 : 1,
+                }}
+              >
+                {submitting ? 'Submitting...' : 'Sign & Submit'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

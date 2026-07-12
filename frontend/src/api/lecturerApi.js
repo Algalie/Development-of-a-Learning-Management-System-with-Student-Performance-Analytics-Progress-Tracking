@@ -1,43 +1,123 @@
-import api from './axios';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  console.log('TOKEN FROM STORAGE:', token ? token.substring(0, 20) + '...' : 'NO TOKEN FOUND');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export const lecturerApi = {
-  // Dashboard
-  getDashboardStats: () => api.get('/lecturer/dashboard'),
+  // ==================== DASHBOARD ====================
+  getDashboardStats: () =>
+    axios.get(`${API_URL}/lecturer/dashboard`, { headers: getAuthHeaders() }),
 
-  // Courses
-  getCourses: () => api.get('/lecturer/courses'),
-  getCourseHistory: () => api.get('/lecturer/course-history'),
-  createCourse: (data) => api.post('/lecturer/create-course', data),
-  viewCourse: (id) => api.get(`/lecturer/course/${id}`),
-  archiveCourse: (id) => api.post(`/lecturer/archive-course/${id}`),
+  // ==================== COURSES ====================
+  getCourses: () =>
+    axios.get(`${API_URL}/lecturer/courses`, { headers: getAuthHeaders() }),
 
-  // Students
-  addCourseStudents: (courseId, data) => api.post(`/lecturer/course/${courseId}/add-students`, data),
-  getStudentInfo: (studentId) => api.get(`/lecturer/api/get-student/${studentId}`),
-  autoEnrollStudents: (courseId) => api.post(`/lecturer/course/${courseId}/auto-enroll-students`),
+  getCourseHistory: () =>
+    axios.get(`${API_URL}/lecturer/course-history`, { headers: getAuthHeaders() }),
 
-  // Assessments
-  addAssessment: (courseId, data) => api.post(`/lecturer/course/${courseId}/add-assessment`, data),
+  createCourse: (data) =>
+    axios.post(`${API_URL}/lecturer/create-course`, data, { headers: getAuthHeaders() }),
 
-  // Grades
-  enterCA: (courseId, data) => api.post(`/lecturer/course/${courseId}/enter-ca`, data),
-  enterExamGrades: (courseId, data) => api.post(`/lecturer/course/${courseId}/enter-exam-grades`, data),
+  viewCourse: (id) =>
+    axios.get(`${API_URL}/lecturer/course/${id}`, { headers: getAuthHeaders() }),
 
-  // Submissions
-  submitForApproval: (type, id) => api.post(`/lecturer/submit/${type}/${id}`),
-  approveSubmission: (id) => api.post(`/lecturer/approve/${id}`),
-  rejectSubmission: (id, reason) => api.post(`/lecturer/reject/${id}`, { reason }),
+  archiveCourse: (id) =>
+    axios.post(`${API_URL}/lecturer/archive-course/${id}`, {}, { headers: getAuthHeaders() }),
 
-  // References
-  getReferenceManagement: (courseId) => api.get(`/lecturer/course/${courseId}/reference-management`),
-  createMissingReferences: (courseId) => api.post(`/lecturer/course/${courseId}/create-missing-references`),
-  updateReferenceGrade: (refId, data) => api.post(`/lecturer/update-reference-grade/${refId}`, data),
+  // ==================== STUDENTS ====================
+  addCourseStudents: (id, data) =>
+    axios.post(`${API_URL}/lecturer/course/${id}/add-students`, data, { headers: getAuthHeaders() }),
 
-  // Pending Approvals
-  getPendingApprovals: (tab) => api.get(`/lecturer/pending-approvals?tab=${tab || 'courses'}`),
+  autoEnrollStudents: (id) =>
+    axios.post(`${API_URL}/lecturer/course/${id}/auto-enroll-students`, {}, { headers: getAuthHeaders() }),
 
-  // Notifications
-  getNotifications: () => api.get('/lecturer/notifications'),
-  getNotificationCount: () => api.get('/lecturer/notifications/count'),
-  getAssessmentNotifications: () => api.get('/lecturer/assessment-notifications'),
+  getStudentInfo: (studentId) =>
+    axios.get(`${API_URL}/lecturer/api/get-student/${studentId}`, { headers: getAuthHeaders() }),
+
+  // ==================== GRADES (COMBINED) ====================
+  enterGrades: (id, data) =>
+    axios.post(`${API_URL}/lecturer/course/${id}/enter-grades`, data, { headers: getAuthHeaders() }),
+
+  submitGrades: (id, data) =>
+    axios.post(`${API_URL}/lecturer/submit-grades/${id}`, data, { headers: getAuthHeaders() }),
+
+  // ==================== LEGACY (keep for backward compatibility) ====================
+  enterCA: (id, data) =>
+    axios.post(`${API_URL}/lecturer/course/${id}/enter-ca`, data, { headers: getAuthHeaders() }),
+
+  enterExamGrades: (id, data) =>
+    axios.post(`${API_URL}/lecturer/course/${id}/enter-exam-grades`, data, { headers: getAuthHeaders() }),
+
+  // ==================== SUBMISSIONS ====================
+  submitForApproval: (type, id) =>
+    axios.post(`${API_URL}/lecturer/submit/${type}/${id}`, {}, { headers: getAuthHeaders() }),
+
+  // ==================== APPROVALS ====================
+  getPendingApprovals: () =>
+    axios.get(`${API_URL}/lecturer/pending-approvals`, { headers: getAuthHeaders() }),
+
+  approveSubmission: (id, data = {}) =>
+    axios.post(`${API_URL}/lecturer/approve/${id}`, data, { headers: getAuthHeaders() }),
+
+  rejectSubmission: (id, reason) =>
+    axios.post(`${API_URL}/lecturer/reject/${id}`, { reason }, { headers: getAuthHeaders() }),
+
+  // ==================== REFERENCES ====================
+  getReferenceManagement: (id) =>
+    axios.get(`${API_URL}/lecturer/course/${id}/reference-management`, { headers: getAuthHeaders() }),
+
+  createMissingReferences: (id) =>
+    axios.post(`${API_URL}/lecturer/course/${id}/create-missing-references`, {}, { headers: getAuthHeaders() }),
+
+  updateReferenceGrade: (refId, data) =>
+    axios.post(`${API_URL}/lecturer/update-reference-grade/${refId}`, data, { headers: getAuthHeaders() }),
+
+    // ==================== APPROVAL HISTORY ====================
+  getMyApprovalHistory: () =>
+    axios.get(`${API_URL}/lecturer/approval-history`, { headers: getAuthHeaders() }),
+
+  // ==================== GRADE EDIT REQUESTS ====================
+  requestGradeEdit: (data) =>
+    axios.post(`${API_URL}/lecturer/request-grade-edit`, data, { headers: getAuthHeaders() }),
+
+  getGradeEditRequests: () =>
+    axios.get(`${API_URL}/lecturer/grade-edit-requests`, { headers: getAuthHeaders() }),
+
+  reviewGradeEdit: (id, data) =>
+    axios.post(`${API_URL}/lecturer/review-grade-edit/${id}`, data, { headers: getAuthHeaders() }),
+
+  // ==================== NOTIFICATIONS ====================
+  getNotifications: () =>
+    axios.get(`${API_URL}/lecturer/notifications`, { headers: getAuthHeaders() }),
+
+  getNotificationCount: () =>
+    axios.get(`${API_URL}/lecturer/notifications/count`, { headers: getAuthHeaders() }),
+
+  getAssessmentNotifications: () =>
+    axios.get(`${API_URL}/lecturer/assessment-notifications`, { headers: getAuthHeaders() }),
+
+  // ==================== ASSESSMENTS ====================
+  addAssessment: (id, data) =>
+    axios.post(`${API_URL}/lecturer/course/${id}/assessments`, data, { headers: getAuthHeaders() }),
+
+  // ==================== FACULTY & DEPARTMENT DATA ====================
+  getFaculties: () =>
+    axios.get(`${API_URL}/lecturer/api/faculties`, { headers: getAuthHeaders() }),
+
+  getDepartments: (facultyId) =>
+    axios.get(`${API_URL}/lecturer/api/departments/${facultyId}`, { headers: getAuthHeaders() }),
+
+  getAllLecturers: () =>
+    axios.get(`${API_URL}/lecturer/api/lecturers`, { headers: getAuthHeaders() }),
+
+    notifyLecturerMissingStudent: (data) =>
+    axios.post(`${API_URL}/lecturer/notify-lecturer-missing`, data, { headers: getAuthHeaders() }),
+
+      forwardMissingStudent: (data) =>
+    axios.post(`${API_URL}/lecturer/forward-missing-student`, data, { headers: getAuthHeaders() }),
 };

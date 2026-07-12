@@ -83,6 +83,8 @@ const Lecturer2FA = () => {
       }
       const response = await lecturerVerify2FA({ temp_token: tempToken, code });
       if (response.token) {
+        // ✅ SAVE TOKEN TO LOCAL STORAGE
+        localStorage.setItem('token', response.token);
         sessionStorage.removeItem('temp_token');
         sessionStorage.removeItem('auth_type');
         sessionStorage.removeItem('dev_2fa_code');
@@ -310,7 +312,6 @@ const Lecturer2FA = () => {
       >
         <div style={{ width: '100%', maxWidth: '440px' }}>
           
-          {/* Dark Mode Toggle */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
             <DarkModeToggle />
           </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { lecturerApi } from '../../api/lecturerApi';
@@ -7,12 +7,13 @@ import FadeIn from '../../components/animations/FadeIn';
 import { 
   FaBell, FaBellSlash, FaArrowLeft, FaClock, FaPaperPlane, 
   FaCheckCircle, FaTimesCircle, FaInfoCircle, FaTrophy,
-  FaSpinner
+  FaSpinner, FaUserPlus, FaExclamationTriangle
 } from 'react-icons/fa';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => { fetchNotifications(); }, []);
 
@@ -25,9 +26,7 @@ const Notifications = () => {
       console.error('Notification error:', error);
       toast.error('Failed to load notifications');
       setNotifications([]);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const getIcon = (type) => {
@@ -51,36 +50,45 @@ const Notifications = () => {
     return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const handleAddStudent = (notif) => {
+    // Extract course ID from message
+    const msg = notif.message || '';
+    const courseIdMatch = msg.match(/Course ID: (\d+)/);
+    if (courseIdMatch) {
+      navigate(`/lecturer/course/${courseIdMatch[1]}/add-students`);
+    } else {
+      toast.error('Could not find course ID');
+    }
+  };
+
+  const isMissingStudentAlert = (notif) => {
+    return notif.title === 'Missing Student — Action Required';
+  };
+
   if (loading) {
     return (
       <div className="dashboard-container" style={{ maxWidth: '750px' }}>
-        <div className="loading-container">
-          <FaSpinner className="loading-spinner" />
-          <p>Loading notifications...</p>
-        </div>
+        <div className="loading-container"><FaSpinner className="loading-spinner" /><p>Loading notifications...</p></div>
       </div>
     );
   }
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  const cardBg = 'var(--card-bg)';
+  const border = 'var(--border)';
+  const textSec = 'var(--text-secondary)';
+  const textMuted = 'var(--text-muted)';
+  const cardBgHover = 'var(--card-bg-hover)';
 
   return (
     <div className="dashboard-container" style={{ maxWidth: '750px' }}>
       <FadeIn>
         <div className="page-header">
-          <Link to="/lecturer/dashboard" className="back-btn">
-            <FaArrowLeft style={{ marginRight: '0.3rem' }} /> Dashboard
-          </Link>
+          <Link to="/lecturer/dashboard" className="back-btn"><FaArrowLeft style={{ marginRight: '0.3rem' }} /> Dashboard</Link>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.6rem' }}>
-            <FaBell style={{ color: '#FFC107' }} />
-            Notifications
+            <FaBell style={{ color: '#FFC107' }} /> Notifications
             {unreadCount > 0 && (
-              <span style={{
-                background: '#ef4444', color: 'white', padding: '0.2rem 0.7rem',
-                borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600
-              }}>
-                {unreadCount} new
-              </span>
+              <span style={{ background: '#ef4444', color: 'white', padding: '0.2rem 0.7rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600 }}>{unreadCount} new</span>
             )}
           </h1>
         </div>
@@ -88,16 +96,16 @@ const Notifications = () => {
 
       <div className="notification-list">
         {notifications.length === 0 ? (
-          <div className="card">
-            <div className="empty-state">
-              <FaBellSlash style={{ fontSize: '3rem', color: '#cbd5e1', marginBottom: '1rem' }} />
-              <h3>No Notifications</h3>
-              <p>You're all caught up! New notifications will appear here.</p>
-            </div>
+          <div style={{ background: cardBg, borderRadius: '16px', padding: '3rem', boxShadow: 'var(--shadow-sm)', border: `1px solid ${border}`, textAlign: 'center' }}>
+            <FaBellSlash style={{ fontSize: '3rem', color: textMuted, marginBottom: '1rem' }} />
+            <h3 style={{ color: '#0A2A66' }}>No Notifications</h3>
+            <p style={{ color: textMuted }}>You're all caught up!</p>
           </div>
         ) : (
           notifications.map((notif, i) => {
             const iconData = getIcon(notif.notification_type);
+            const isMissingStudent = isMissingStudentAlert(notif);
+            
             return (
               <motion.div
                 key={notif.id || i}
@@ -105,52 +113,57 @@ const Notifications = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
                 style={{
-                  background: 'white',
+                  background: isMissingStudent ? '#fef2f2' : (notif.is_read ? cardBg : cardBg),
                   borderRadius: '16px',
                   padding: '1.25rem 1.5rem',
-                  border: `1px solid ${notif.is_read ? '#f0f2f5' : iconData.border}`,
-                  borderLeft: notif.is_read ? '1px solid #f0f2f5' : `4px solid ${iconData.color}`,
+                  border: `1px solid ${notif.is_read ? border : iconData.border}`,
+                  borderLeft: isMissingStudent ? '4px solid #dc2626' : (notif.is_read ? `1px solid ${border}` : `4px solid ${iconData.color}`),
                   display: 'flex',
                   gap: '1rem',
                   alignItems: 'flex-start',
                   transition: 'all 0.3s ease',
-                  boxShadow: notif.is_read ? '0 2px 8px rgba(0,0,0,0.03)' : '0 4px 15px rgba(0,0,0,0.06)',
-                  background: notif.is_read ? 'white' : '#fafbff',
+                  boxShadow: notif.is_read ? 'var(--shadow-sm)' : 'var(--shadow-md)',
+                  background: notif.is_read ? cardBg : isMissingStudent ? '#fef2f2' : 'var(--blue-bg)',
                 }}
                 whileHover={{ x: 4 }}
               >
                 <div style={{
-                  minWidth: '44px', height: '44px',
-                  borderRadius: '12px',
-                  background: iconData.bg,
-                  border: `1px solid ${iconData.border}`,
+                  minWidth: '44px', height: '44px', borderRadius: '12px',
+                  background: isMissingStudent ? '#fef2f2' : iconData.bg,
+                  border: `1px solid ${isMissingStudent ? '#fecaca' : iconData.border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.1rem', color: iconData.color, flexShrink: 0
+                  fontSize: '1.1rem', color: isMissingStudent ? '#dc2626' : iconData.color, flexShrink: 0
                 }}>
-                  {iconData.icon}
+                  {isMissingStudent ? <FaExclamationTriangle /> : iconData.icon}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{
-                    fontWeight: 700, color: '#0A2A66', marginBottom: '0.3rem',
-                    fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
-                  }}>
+                  <div style={{ fontWeight: 700, color: '#0A2A66', marginBottom: '0.3rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {notif.title}
                     {!notif.is_read && (
-                      <span style={{
-                        width: '8px', height: '8px', borderRadius: '50%',
-                        background: iconData.color, display: 'inline-block'
-                      }}></span>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: iconData.color, display: 'inline-block' }}></span>
                     )}
                   </div>
-                  <div style={{ color: '#64748b', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                    {notif.message}
-                  </div>
-                  <div style={{
-                    fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem',
-                    display: 'flex', alignItems: 'center', gap: '0.3rem'
-                  }}>
-                    <FaClock style={{ fontSize: '0.65rem' }} />
-                    {timeAgo(notif.created_at)}
+                  <div style={{ color: textSec, fontSize: '0.85rem', lineHeight: 1.5 }}>{notif.message}</div>
+                  
+                  {/* Quick Action for Missing Student */}
+                  {isMissingStudent && (
+                    <button
+                      onClick={() => handleAddStudent(notif)}
+                      style={{
+                        marginTop: '0.75rem',
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                        padding: '0.5rem 1rem', borderRadius: '8px',
+                        background: '#dc2626', color: 'white', border: 'none',
+                        cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+                        fontFamily: 'Inter, sans-serif',
+                      }}
+                    >
+                      <FaUserPlus /> Add Missing Student
+                    </button>
+                  )}
+                  
+                  <div style={{ fontSize: '0.75rem', color: textMuted, marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <FaClock style={{ fontSize: '0.65rem' }} /> {timeAgo(notif.created_at)}
                   </div>
                 </div>
               </motion.div>

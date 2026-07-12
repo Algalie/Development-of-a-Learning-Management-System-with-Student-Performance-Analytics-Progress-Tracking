@@ -21,12 +21,14 @@ const AdminLayout = () => {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // Redirect non-admin users
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
-  if (user && !isAdmin) {
+  // ✅ Only redirect if user is loaded AND is definitely NOT admin
+  const isAdmin = user?.user_type === 'admin' || user?.role === 'admin' || user?.role === 'super_admin';
+  
+  if (user && !isAdmin && user.user_type !== 'admin') {
     return <Navigate to="/lecturer/dashboard" replace />;
   }
 
+  // If user hasn't loaded yet but token exists, allow through
   return (
     <div style={{ minHeight: '100vh', background: '#f7f9fc' }}>
       <TopBar />

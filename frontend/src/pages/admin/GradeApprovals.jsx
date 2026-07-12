@@ -5,15 +5,15 @@ import { adminApi } from '../../api/adminApi';
 import FadeIn from '../../components/animations/FadeIn';
 import { 
   FaArrowLeft, FaEye, FaSpinner, FaCalculator, FaFileAlt, FaSyncAlt,
-  FaCheckCircle, FaTimesCircle, FaClock
+  FaCheckCircle, FaTimesCircle, FaClock, FaGraduationCap
 } from 'react-icons/fa';
 
 const GradeApprovals = () => {
   const [data, setData] = useState({ 
-    ca_approvals: [], exam_approvals: [], reference_approvals: [], 
+    grades_approvals: [], ca_approvals: [], exam_approvals: [], reference_approvals: [], 
     rejected_approvals: [], stats: {} 
   });
-  const [activeTab, setActiveTab] = useState('ca');
+  const [activeTab, setActiveTab] = useState('grades');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
@@ -34,13 +34,15 @@ const GradeApprovals = () => {
   };
 
   const tabs = [
-    { key: 'ca', label: 'CA Submissions', icon: <FaCalculator />, data: data.ca_approvals || [], typeClass: 'type-ca' },
-    { key: 'exam', label: 'Exam Submissions', icon: <FaFileAlt />, data: data.exam_approvals || [], typeClass: 'type-exam' },
-    { key: 'reference', label: 'Reference Submissions', icon: <FaSyncAlt />, data: data.reference_approvals || [], typeClass: 'type-reference' },
+    { key: 'grades', label: 'Grades (Combined)', icon: <FaGraduationCap />, data: data.grades_approvals || [], typeClass: 'type-grades' },
+    { key: 'ca', label: 'CA (Legacy)', icon: <FaCalculator />, data: data.ca_approvals || [], typeClass: 'type-ca' },
+    { key: 'exam', label: 'Exam (Legacy)', icon: <FaFileAlt />, data: data.exam_approvals || [], typeClass: 'type-exam' },
+    { key: 'reference', label: 'Reference', icon: <FaSyncAlt />, data: data.reference_approvals || [], typeClass: 'type-reference' },
     { key: 'rejected', label: 'Rejected', icon: <FaTimesCircle />, data: data.rejected_approvals || [], typeClass: '' },
   ];
 
   const typeConfig = {
+    grades: { label: 'Grades', color: '#0A2A66', bg: '#f0f4ff' },
     ca: { label: 'CA', color: '#7c3aed', bg: '#f5f3ff' },
     exam: { label: 'Exam', color: '#16a34a', bg: '#f0fdf4' },
     reference: { label: 'Reference', color: '#dc2626', bg: '#fef2f2' },
@@ -70,7 +72,7 @@ const GradeApprovals = () => {
           <div>
             <h1>Grade Approvals</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-              Monitor CA, Exam, and Reference submissions
+              Monitor all grade submissions
             </p>
           </div>
         </div>
@@ -88,13 +90,15 @@ const GradeApprovals = () => {
 
       {/* Stats Grid */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)',
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
         gap: '1rem', marginBottom: '2rem',
       }}>
         {[
+          { label: 'Pending Grades', value: data.stats?.pending_grades || 0, color: '#0A2A66', bg: '#f0f4ff' },
           { label: 'Pending CA', value: data.stats?.pending_ca || 0, color: '#7c3aed', bg: '#f5f3ff' },
           { label: 'Pending Exam', value: data.stats?.pending_exam || 0, color: '#16a34a', bg: '#f0fdf4' },
           { label: 'Pending Refs', value: data.stats?.pending_references || 0, color: '#dc2626', bg: '#fef2f2' },
+          { label: 'Approved Grades', value: data.stats?.approved_grades || 0, color: '#0A2A66', bg: '#f0f4ff' },
           { label: 'Approved CA', value: data.stats?.approved_ca || 0, color: '#7c3aed', bg: '#f5f3ff' },
           { label: 'Approved Exam', value: data.stats?.approved_exam || 0, color: '#16a34a', bg: '#f0fdf4' },
           { label: 'Rejected', value: data.stats?.rejected || 0, color: '#dc2626', bg: '#fef2f2' },
@@ -134,6 +138,13 @@ const GradeApprovals = () => {
             }}
           >
             {tab.icon} {tab.label}
+            <span style={{
+              background: activeTab === tab.key ? 'rgba(255,255,255,0.15)' : 'var(--card-bg-hover)',
+              padding: '0.1rem 0.5rem', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 600,
+              color: activeTab === tab.key ? 'white' : 'var(--text-secondary)',
+            }}>
+              {tab.data.length}
+            </span>
           </button>
         ))}
       </div>

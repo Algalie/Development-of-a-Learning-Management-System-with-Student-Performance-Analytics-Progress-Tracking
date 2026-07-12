@@ -21,8 +21,9 @@ const LecturerLayout = () => {
     return <Navigate to="/lecturer/login" replace />;
   }
 
-  // Redirect admin users to admin dashboard
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  // ✅ Only redirect if user is loaded AND is definitely admin
+  const isAdmin = user?.user_type === 'admin' || user?.role === 'admin' || user?.role === 'super_admin';
+  
   if (user && isAdmin) {
     return <Navigate to="/admin/dashboard" replace />;
   }

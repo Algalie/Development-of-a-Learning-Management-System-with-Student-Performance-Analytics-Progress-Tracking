@@ -1,68 +1,157 @@
-import api from './axios';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export const adminApi = {
-  // Dashboard
-  getDashboardStats: () => api.get('/admin/dashboard'),
+  // ==================== DASHBOARD ====================
+  getDashboardStats: () =>
+    axios.get(`${API_URL}/admin/dashboard`, { headers: getAuthHeaders() }),
 
-  // Users
-  getAdmins: () => api.get('/admin/admins'),
-  getLecturers: () => api.get('/admin/lecturers'),
-  addAdmin: (data) => api.post('/admin/add-admin', data),
-  addLecturer: (data) => api.post('/admin/add-lecturer', data),
-  editLecturer: (id, data) => api.put(`/admin/edit-lecturer/${id}`, data),
-  deleteLecturer: (id) => api.delete(`/admin/delete-lecturer/${id}`),
+  // ==================== USER MANAGEMENT ====================
+  getAdmins: () =>
+    axios.get(`${API_URL}/admin/admins`, { headers: getAuthHeaders() }),
 
-  // Faculty & Department
-  getFaculties: () => api.get('/admin/faculties'),
-  addFaculty: (data) => api.post('/admin/add-faculty', data),
-  editFaculty: (id, data) => api.put(`/admin/edit-faculty/${id}`, data),
-  deleteFaculty: (id) => api.delete(`/admin/delete-faculty/${id}`),
-  addDepartment: (facultyId, data) => api.post(`/admin/add-department/${facultyId}`, data),
-  editDepartment: (id, data) => api.put(`/admin/edit-department/${id}`, data),
-  deleteDepartment: (id) => api.delete(`/admin/delete-department/${id}`),
-  getDepartments: (facultyId) => api.get(`/admin/api/departments/${facultyId}`),
+  getLecturers: () =>
+    axios.get(`${API_URL}/admin/lecturers`, { headers: getAuthHeaders() }),
 
-  // Course Approvals
-  getCourseApprovals: () => api.get('/admin/course-approvals'),
-  viewCourse: (id) => api.get(`/admin/course/${id}/view`),
+  addAdmin: (data) =>
+    axios.post(`${API_URL}/admin/add-admin`, data, { headers: getAuthHeaders() }),
 
-  // Grade Approvals
-  getGradeApprovals: () => api.get('/admin/grade-approvals'),
-  viewCASubmission: (id) => api.get(`/admin/ca-submission/${id}`),
-  viewExamSubmission: (id) => api.get(`/admin/exam-submission/${id}`),
-  viewReferenceGrade: (id) => api.get(`/admin/reference-grade/${id}`),
+  addLecturer: (data) =>
+    axios.post(`${API_URL}/admin/add-lecturer`, data, { headers: getAuthHeaders() }),
 
-  // Exam Office
-  getExamOfficeSubmissions: (tab = 'pending') => api.get(`/admin/exam-office-submissions?tab=${tab}`),
-  viewSubmission: (id) => api.get(`/admin/submission/${id}/view`),
-  approveSubmission: (id) => api.post(`/admin/exam-approve/${id}`),
-  rejectSubmission: (id, reason) => api.post(`/admin/exam-reject/${id}`, { reason }),
+  editLecturer: (id, data) =>
+    axios.put(`${API_URL}/admin/edit-lecturer/${id}`, data, { headers: getAuthHeaders() }),
 
-  // Reference Management
-  getReferences: (studentId) => api.get(`/admin/reference-management?student_id=${studentId || ''}`),
-  getReferenceDashboard: (filters) => api.get('/admin/reference-dashboard', { params: filters }),
-  deleteAllReferences: () => api.post('/admin/api/delete-all-references'),
-  resetAllReferences: () => api.post('/admin/api/reset-all-references'),
+  deleteLecturer: (id) =>
+    axios.delete(`${API_URL}/admin/delete-lecturer/${id}`, { headers: getAuthHeaders() }),
 
-  // GPA Calculator
-  getStudentGrades: (data) => api.post('/admin/api/student-grades', data),
-  calculateGPA: (data) => api.post('/admin/api/calculate-student-gpa', data),
+  // ==================== FACULTY & DEPARTMENT ====================
+  getFaculties: () =>
+    axios.get(`${API_URL}/admin/faculties`, { headers: getAuthHeaders() }),
 
-  // Transcript
-  getTranscript: (studentId) => api.get(`/admin/transcript?student_id=${studentId}`),
-  getDepartmentStudents: (params) => api.get('/admin/department-students', { params }),
-  saveTranscript: (data) => api.post('/admin/save-transcript', data),
-  verifyTranscript: (transcriptId) => api.get(`/admin/verify-transcript/${transcriptId}`),
+  addFaculty: (data) =>
+    axios.post(`${API_URL}/admin/add-faculty`, data, { headers: getAuthHeaders() }),
 
-  // Failure History
-  getFailureHistory: (studentId) => api.get(`/admin/api/failure-history/${studentId}`),
-  deleteStudentData: (studentId) => api.delete(`/admin/api/delete-student/${studentId}`),
-  deleteAllGPA: () => api.delete('/admin/api/delete-all-gpa'),
+  editFaculty: (id, data) =>
+    axios.put(`${API_URL}/admin/edit-faculty/${id}`, data, { headers: getAuthHeaders() }),
 
-  // Approval History
-  getApprovalHistory: (filters) => api.get('/admin/approval-history', { params }),
+  deleteFaculty: (id) =>
+    axios.delete(`${API_URL}/admin/delete-faculty/${id}`, { headers: getAuthHeaders() }),
 
-  // Notifications
-  getNotifications: () => api.get('/admin/notifications'),
-  getNotificationCount: () => api.get('/admin/notifications/count'),
+  addDepartment: (facultyId, data) =>
+    axios.post(`${API_URL}/admin/add-department/${facultyId}`, data, { headers: getAuthHeaders() }),
+
+  editDepartment: (id, data) =>
+    axios.put(`${API_URL}/admin/edit-department/${id}`, data, { headers: getAuthHeaders() }),
+
+  deleteDepartment: (id) =>
+    axios.delete(`${API_URL}/admin/delete-department/${id}`, { headers: getAuthHeaders() }),
+
+  getDepartments: (facultyId) =>
+    axios.get(`${API_URL}/admin/api/departments/${facultyId}`, { headers: getAuthHeaders() }),
+
+  // ==================== APPROVALS ====================
+  getCourseApprovals: () =>
+    axios.get(`${API_URL}/admin/course-approvals`, { headers: getAuthHeaders() }),
+
+  viewCourse: (id) =>
+    axios.get(`${API_URL}/admin/course/${id}/view`, { headers: getAuthHeaders() }),
+
+  getGradeApprovals: () =>
+    axios.get(`${API_URL}/admin/grade-approvals`, { headers: getAuthHeaders() }),
+
+  getExamOfficeSubmissions: () =>
+    axios.get(`${API_URL}/admin/exam-office-submissions`, { headers: getAuthHeaders() }),
+
+  viewSubmission: (id) =>
+    axios.get(`${API_URL}/admin/submission/${id}/view`, { headers: getAuthHeaders() }),
+
+  examApprove: (id) =>
+    axios.post(`${API_URL}/admin/exam-approve/${id}`, {}, { headers: getAuthHeaders() }),
+
+  examReject: (id, reason) =>
+    axios.post(`${API_URL}/admin/exam-reject/${id}`, { reason }, { headers: getAuthHeaders() }),
+
+  getApprovalHistory: () =>
+    axios.get(`${API_URL}/admin/approval-history`, { headers: getAuthHeaders() }),
+
+  // ==================== REFERENCES ====================
+  getReferenceManagement: (studentId) =>
+    axios.get(`${API_URL}/admin/reference-management`, { 
+      headers: getAuthHeaders(), 
+      params: { student_id: studentId } 
+    }),
+
+  getReferenceDashboard: () =>
+    axios.get(`${API_URL}/admin/reference-dashboard`, { headers: getAuthHeaders() }),
+
+  deleteAllReferences: () =>
+    axios.post(`${API_URL}/admin/api/delete-all-references`, {}, { headers: getAuthHeaders() }),
+
+  resetAllReferences: () =>
+    axios.post(`${API_URL}/admin/api/reset-all-references`, {}, { headers: getAuthHeaders() }),
+
+  // ==================== GPA & TRANSCRIPT ====================
+  getStudentGrades: (data) =>
+    axios.post(`${API_URL}/admin/api/student-grades`, data, { headers: getAuthHeaders() }),
+
+  calculateGPA: (data) =>
+    axios.post(`${API_URL}/admin/api/calculate-student-gpa`, data, { headers: getAuthHeaders() }),
+
+  getTranscript: (studentId) =>
+    axios.get(`${API_URL}/admin/transcript`, { 
+      headers: getAuthHeaders(), 
+      params: { student_id: studentId } 
+    }),
+
+  saveTranscript: (data) =>
+    axios.post(`${API_URL}/admin/save-transcript`, data, { headers: getAuthHeaders() }),
+
+  verifyTranscript: (transcriptId) =>
+    axios.get(`${API_URL}/admin/verify-transcript/${transcriptId}`, { headers: getAuthHeaders() }),
+
+  // ==================== DEPARTMENT STUDENTS ====================
+  getDepartmentStudents: (params) =>
+    axios.get(`${API_URL}/admin/department-students`, { headers: getAuthHeaders(), params }),
+
+  getFailureHistory: (studentId) =>
+    axios.get(`${API_URL}/admin/api/failure-history/${studentId}`, { headers: getAuthHeaders() }),
+
+  deleteStudent: (studentId) =>
+    axios.delete(`${API_URL}/admin/api/delete-student/${studentId}`, { headers: getAuthHeaders() }),
+
+  // ==================== NOTIFICATIONS ====================
+  getNotifications: () =>
+    axios.get(`${API_URL}/admin/notifications`, { headers: getAuthHeaders() }),
+
+  getNotificationCount: () =>
+    axios.get(`${API_URL}/admin/notifications/count`, { headers: getAuthHeaders() }),
+
+  // ==================== GRADE EDIT REQUESTS (NEW) ====================
+  getGradeEditRequests: () =>
+    axios.get(`${API_URL}/admin/grade-edit-requests`, { headers: getAuthHeaders() }),
+
+  activateGradeEdit: (id, data) =>
+    axios.post(`${API_URL}/admin/activate-grade-edit/${id}`, data, { headers: getAuthHeaders() }),
+
+    // ==================== BLOCK GPA ====================
+  checkDepartmentCourses: (data) =>
+    axios.post(`${API_URL}/admin/api/block-gpa/check-department`, data, { headers: getAuthHeaders() }),
+
+  calculateBlockGPA: (data) =>
+    axios.post(`${API_URL}/admin/api/block-gpa/calculate`, data, { headers: getAuthHeaders() }),
+
+
+
+    notifyMissingStudents: (data) =>
+    axios.post(`${API_URL}/admin/api/block-gpa/notify-missing`, data, { headers: getAuthHeaders() }),
+
+  notifyLecturerMissing: (data) =>
+    axios.post(`${API_URL}/admin/api/block-gpa/notify-lecturer`, data, { headers: getAuthHeaders() }),
 };

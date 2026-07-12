@@ -42,6 +42,7 @@ import ViewSubmission from './pages/admin/ViewSubmission';
 import ViewCASubmission from './pages/admin/ViewCASubmission';
 import ViewExamSubmission from './pages/admin/ViewExamSubmission';
 import ViewReferenceGrade from './pages/admin/ViewReferenceGrade';
+import GradeEditRequests from './pages/admin/GradeEditRequests';
 
 // Lecturer Pages
 import LecturerDashboard from './pages/lecturer/Dashboard';
@@ -51,12 +52,14 @@ import ViewCourseLecturer from './pages/lecturer/ViewCourse';
 import CourseHistory from './pages/lecturer/CourseHistory';
 import AddCourseStudents from './pages/lecturer/AddCourseStudents';
 import AddAssessment from './pages/lecturer/AddAssessment';
-import EnterCA from './pages/lecturer/EnterCA';
-import EnterExam from './pages/lecturer/EnterExam';
+import EnterGrades from './pages/lecturer/EnterGrades';
 import ReferenceManagementLecturer from './pages/lecturer/ReferenceManagement';
 import PendingApprovals from './pages/lecturer/PendingApprovals';
 import AssessmentNotifications from './pages/lecturer/AssessmentNotifications';
 import LecturerNotifications from './pages/lecturer/Notifications';
+import LecturerApprovalHistory from './pages/lecturer/ApprovalHistory';
+import RequestGradeEdit from './pages/lecturer/RequestGradeEdit';
+
 
 function App() {
   const { loading } = useAuth();
@@ -147,6 +150,9 @@ function App() {
             <Route path="transcript" element={<Transcript />} />
             <Route path="failure-history" element={<FailureHistory />} />
 
+            {/* Grade Edit Requests */}
+            <Route path="grade-edit-requests" element={<GradeEditRequests />} />
+
             {/* Notifications */}
             <Route path="notifications" element={<Notifications />} />
           </Route>
@@ -162,15 +168,15 @@ function App() {
             <Route path="course/:id" element={<ViewCourseLecturer />} />
             <Route path="course-history" element={<CourseHistory />} />
 
+            <Route path="approval-history" element={<LecturerApprovalHistory />} />
             {/* Students */}
             <Route path="course/:id/add-students" element={<AddCourseStudents />} />
 
             {/* Assessments */}
             <Route path="course/:id/add-assessment" element={<AddAssessment />} />
 
-            {/* Grades */}
-            <Route path="course/:id/enter-ca" element={<EnterCA />} />
-            <Route path="course/:id/enter-exam" element={<EnterExam />} />
+            {/* Grades — Combined */}
+            <Route path="course/:id/enter-grades" element={<EnterGrades />} />
 
             {/* References */}
             <Route path="course/:id/reference-management" element={<ReferenceManagementLecturer />} />
@@ -178,6 +184,7 @@ function App() {
             {/* Approvals */}
             <Route path="pending-approvals" element={<PendingApprovals />} />
             <Route path="assessment-notifications" element={<AssessmentNotifications />} />
+            <Route path="course/:id/request-grade-edit" element={<RequestGradeEdit />} />
 
             {/* Notifications */}
             <Route path="notifications" element={<LecturerNotifications />} />
