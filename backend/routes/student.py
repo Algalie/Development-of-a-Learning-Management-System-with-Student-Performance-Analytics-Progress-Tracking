@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import jwt
 from flask import current_app
 import logging
+from services.ai_service import ask_ai, generate_gpa_prediction, generate_dashboard_summary
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -1134,3 +1135,87 @@ def debug_decode_token():
     except Exception as e:
         logger.error(f"Debug decode-token error: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+    
+
+@student_bp.route('/ai-assistant', methods=['POST'])
+@token_required
+def ai_assistant():
+    """AI Academic Assistant for students"""
+    try:
+        student_id = None
+        if hasattr(request, 'user') and request.user:
+            student_id = request.user.get('student_id') or request.user.get('user_id')
+        
+        data = request.get_json() or {}
+        question = data.get('question', '')
+        
+        if not question:
+            return jsonify({'error': 'Question is required'}), 400
+        
+        # Get student data for context
+        student_data = None
+        if student_id:
+            try:
+                response = student_bp.view_functions['dashboard']()
+                student_data = response[0].json if isinstance(response, tuple) else response.json
+            except:
+                pass
+        
+        answer = ask_ai(question, student_data)
+        return jsonify({'answer': answer})
+        
+    except Exception as e:
+        logger.error(f"AI Assistant error: {str(e)}")
+        return jsonify({'error': 'Failed to process question'}), 500
+
+
+@student_bp.route('/gpa-prediction', methods=['GET'])
+@token_required
+def gpa_prediction():
+    """Get AI-powered GPA prediction"""
+    try:
+        student_id = None
+        if hasattr(request, 'user') and request.user:
+            student_id = request.user.get('student_id') or request.user.get('user_id')
+        
+        student_data = {}
+        if student_id:
+            try:
+                # Get dashboard data
+                from models.academic import CourseStudent
+                from models.gpa import StudentGPA
+                from models.reference import ReferenceGrade
+                
+                enrollment = CourseStudent.query.filter_by(student_id=student_id).first()
+                gpa = StudentGPA.query.filter_by(student_id=student_id).order_by(
+                    StudentGPA.academic_year.desc(), StudentGPA.semester.desc()
+                ).first()
+                
+                pending_refs = ReferenceGrade.query.join(CourseStudent).filter(
+                    CourseStudent.student_id == student_id,
+                    ReferenceGrade.reference_status == 'pending'
+                ).count()
+                
+                double_fails = ReferenceGrade.query.join(CourseStudent).filter(
+                    CourseStudent.student_id == student_id,
+                    ReferenceGrade.reference_status == 'double_fail'
+                ).count()
+                
+                student_data = {
+                    'student_name': enrollment.student_name if enrollment else 'Student',
+                    'student_id': student_id,
+                    'latest_gpa': round(gpa.gpa, 2) if gpa and gpa.gpa else None,
+                    'overall_status': 'active' if enrollment else 'inactive',
+                    'latest_level': gpa.level if gpa else None,
+                    'pending_references_count': pending_refs,
+                    'double_fail_count': double_fails,
+                }
+            except Exception as e:
+                pass
+        
+        prediction = generate_gpa_prediction(student_data)
+        return jsonify(prediction)
+        
+    except Exception as e:
+        logger.error(f"GPA Prediction error: {str(e)}")
+        return jsonify({'error': 'Failed to generate prediction'}), 500
