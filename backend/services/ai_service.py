@@ -9,7 +9,9 @@ def ask_ai(question, student_data=None):
     """AI Academic Assistant using OpenRouter"""
     context = ""
     if student_data:
-        context = f"Student GPA: {student_data.get('latest_gpa', 'N/A')}. ID: {student_data.get('student_id', 'N/A')}"
+        sid = student_data.get('student_id', 'Student')
+        gpa = student_data.get('latest_gpa', 'N/A')
+        context = f"Student ID: {sid}. Current GPA: {gpa}."
 
     try:
         response = requests.post(
@@ -23,23 +25,20 @@ def ask_ai(question, student_data=None):
                 'messages': [
                     {
                         'role': 'system',
-                        'content': 'You are an AI Academic Assistant for Milton Margai Technical University. Be helpful, encouraging, and professional. Keep responses short (2-3 sentences).'
+                        'content': 'You are an AI Academic Assistant for Milton Margai Technical University (MMTU). Answer ONLY academic-related questions about GPA, grades, courses, study tips, and university life. For unrelated questions, politely redirect to academic topics. Be helpful, encouraging, and professional. Keep answers under 3 sentences. Grading scale: A=75-100 (5.0), B=65-74 (4.0), C=50-64 (3.0), D=40-49 (2.0), E=30-39 (1.0, needs reference), F=0-29 (0.0, needs reference). First Class requires CGPA of 4.5+. If student GPA is below 3.0, they need reference/resit.'
                     },
                     {
                         'role': 'user',
                         'content': f"{context}\n\nQuestion: {question}"
                     }
                 ],
-                'max_tokens': 200,
+                'max_tokens': 250,
+                'temperature': 0.3,
             },
             timeout=30
         )
 
         data = response.json()
-        print(f"AI Response Status: {response.status_code}")
-        print(f"AI Response Data: {json.dumps(data)[:300]}")
-        data = response.json()
-        print(f"FULL RESPONSE: {json.dumps(data, indent=2)}")
 
         if 'choices' in data and len(data['choices']) > 0:
             content = data['choices'][0]['message'].get('content', '')
@@ -51,18 +50,26 @@ def ask_ai(question, student_data=None):
     except Exception as e:
         print(f"AI Error: {e}")
         gpa = student_data.get('latest_gpa') if student_data else None
-        if 'gpa' in question.lower():
-            return f"Your current GPA is {gpa if gpa else 'not available'}. Keep working hard!"
-        if 'hello' in question.lower() or 'hi' in question.lower():
-            return f"Hello! Your current GPA is {gpa}. How can I help you today?"
-        if 'improve' in question.lower():
-            return "To improve: attend all lectures, complete assignments on time, form study groups, and review past exams."
-        return "I'm here to help with your academic questions. Ask me about your GPA, grades, or study tips!"
+        sid = student_data.get('student_id', 'Student') if student_data else 'Student'
+        q = question.lower()
+
+        if 'gpa' in q or 'grade' in q:
+            return f"Student {sid}, your current GPA is {gpa if gpa else 'not available'}. Keep working hard!"
+        if 'hello' in q or 'hi' in q:
+            return f"Hello {sid}! Your GPA is {gpa}. How can I help you today?"
+        if 'improve' in q or 'better' in q:
+            return "To improve: attend all lectures, complete assignments on time, form study groups, and review past exam papers."
+        if 'reference' in q or 'resit' in q:
+            return "Check your dashboard for pending references. Grades E and F require reference/resit. Contact your HOD for arrangements."
+        if 'first class' in q:
+            return f"First Class requires a CGPA of 4.5+. With your current GPA of {gpa}, focus on scoring 75+ (A grade) in all courses to reach this goal."
+        return f"I'm your academic assistant, {sid}. Your GPA is {gpa}. Ask me about grades, study tips, or academic progress."
 
 
 def generate_gpa_prediction(student_data):
     """Generate GPA prediction using OpenRouter"""
     try:
+        gpa = student_data.get('latest_gpa', 'N/A')
         response = requests.post(
             OPENROUTER_URL,
             headers={
@@ -74,14 +81,15 @@ def generate_gpa_prediction(student_data):
                 'messages': [
                     {
                         'role': 'system',
-                        'content': 'You are a GPA prediction system. Return ONLY valid JSON with prediction and recommendations.'
+                        'content': 'Return ONLY valid JSON: {"prediction": "1 sentence", "recommendations": ["tip1", "tip2", "tip3"]}'
                     },
                     {
                         'role': 'user',
-                        'content': f"Based on GPA {student_data.get('latest_gpa')}, predict future performance and give 3 tips. Format: {{\"prediction\": \"...\", \"recommendations\": [\"...\", \"...\", \"...\"]}}"
+                        'content': f"Student GPA: {gpa}. Predict their academic trajectory and give 3 study tips."
                     }
                 ],
                 'max_tokens': 200,
+                'temperature': 0.3,
             },
             timeout=30
         )
@@ -114,7 +122,7 @@ def generate_dashboard_summary(stats):
                 'messages': [
                     {
                         'role': 'system',
-                        'content': 'Summarize university statistics in 2-3 friendly sentences.'
+                        'content': 'Summarize these university statistics in 2 sentences.'
                     },
                     {
                         'role': 'user',
@@ -122,6 +130,7 @@ def generate_dashboard_summary(stats):
                     }
                 ],
                 'max_tokens': 150,
+                'temperature': 0.3,
             },
             timeout=30
         )
@@ -132,7 +141,7 @@ def generate_dashboard_summary(stats):
             if content:
                 return content.strip()
 
-        return f"The system has {stats.get('total_students', 0)} students and {stats.get('total_courses', 0)} active courses."
+        return f"The system has {stats.get('total_students', 0)} students and {stats.get('total_courses', 0)} active courses. {stats.get('finalized_today', 0)} submissions finalized today."
 
     except:
         return f"The system has {stats.get('total_students', 0)} students and {stats.get('total_courses', 0)} active courses."

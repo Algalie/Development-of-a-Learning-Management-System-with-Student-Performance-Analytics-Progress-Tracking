@@ -1229,3 +1229,27 @@ def gpa_prediction():
     except Exception as e:
         logger.error(f"GPA Prediction error: {str(e)}")
         return jsonify({'error': 'Failed to generate prediction'}), 500
+
+
+@student_bp.route('/alerts', methods=['GET'])
+@token_required
+def alerts():
+    """Get student alerts (returns same as notifications)"""
+    from models.notification import Notification
+    student_id = request.user.get('student_id') or request.user.get('user_id')
+    notifs = Notification.query.filter_by(
+        user_id=student_id, user_type='student', is_dismissed=False
+    ).order_by(Notification.created_at.desc()).limit(20).all()
+    return jsonify([n.to_dict() for n in notifs])
+
+
+@student_bp.route('/notifications', methods=['GET'])
+@token_required
+def student_notifications():
+    """Get student notifications"""
+    from models.notification import Notification
+    student_id = request.user.get('student_id') or request.user.get('user_id')
+    notifs = Notification.query.filter_by(
+        user_id=student_id, user_type='student', is_dismissed=False
+    ).order_by(Notification.created_at.desc()).limit(20).all()
+    return jsonify([n.to_dict() for n in notifs])

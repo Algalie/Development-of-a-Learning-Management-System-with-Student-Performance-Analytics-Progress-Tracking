@@ -18,6 +18,7 @@ def dashboard():
     from models.approval import ApprovalRequest
     from models.reference import ReferenceGrade
     from models.notification import Notification
+    from services.ai_service import generate_dashboard_summary
     
     total_admins = Admin.query.count()
     total_lecturers = Lecturer.query.count()
@@ -26,17 +27,14 @@ def dashboard():
     total_courses = Course.query.count()
     total_students = db.session.query(CourseStudent.student_id).distinct().count()
     
-    # Course approvals
     pending_courses = ApprovalRequest.query.filter_by(submission_type='course').filter(
         ApprovalRequest.status.in_(['pending_hod', 'pending_dean', 'pending_exam'])
     ).count()
     
-    # Combined grades
     pending_grades = ApprovalRequest.query.filter_by(submission_type='grades').filter(
         ApprovalRequest.status.in_(['pending_hod', 'pending_dean', 'pending_exam'])
     ).count()
     
-    # Legacy CA and Exam (keep for backward compatibility)
     pending_ca = ApprovalRequest.query.filter_by(submission_type='ca').filter(
         ApprovalRequest.status.in_(['pending_hod', 'pending_dean', 'pending_exam'])
     ).count()
@@ -72,6 +70,24 @@ def dashboard():
             user_id=admin.id, user_type='admin', is_read=False, is_dismissed=False
         ).count()
     
+    # ✅ AI Summary
+    ai_summary = ""
+    try:
+        ai_summary = generate_dashboard_summary({
+            'total_students': total_students,
+            'total_lecturers': total_lecturers,
+            'total_courses': total_courses,
+            'total_faculties': total_faculties,
+            'total_departments': total_departments,
+            'pending_approvals': pending_at_exam,
+            'finalized_today': finalized_today,
+            'double_failures': double_fail,
+            'cleared_references': cleared_ref,
+        })
+    except Exception as e:
+        print(f"AI Summary error: {e}")
+        ai_summary = f"The system has {total_students} students across {total_faculties} faculties. {finalized_today} submissions were finalized today. {pending_at_exam} items are pending approval."
+    
     return jsonify({
         'stats': {
             'total_admins': total_admins,
@@ -95,7 +111,8 @@ def dashboard():
             'cleared_references': cleared_ref,
             'double_failures': double_fail,
             'unread_notifications': unread,
-        }
+        },
+        'ai_summary': ai_summary,
     })
 
 # ==================== USER MANAGEMENT ====================
