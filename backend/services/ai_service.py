@@ -3,7 +3,7 @@ import os
 import json
 
 # Your OpenRouter API key
-OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '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')
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
 OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 def ask_ai(question, student_data=None):
