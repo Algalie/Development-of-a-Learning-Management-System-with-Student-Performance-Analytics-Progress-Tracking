@@ -162,22 +162,20 @@ def dashboard():
     from models.academic import Course
     from models.approval import ApprovalRequest
     from models.notification import Notification
+    from services.ai_service import generate_dashboard_summary
 
     lecturer = Lecturer.query.get(request.user['user_id'])
     if not lecturer:
         return jsonify({'error': 'Lecturer not found'}), 404
 
-    # Get courses assigned to this lecturer
     assigned_courses = Course.query.filter_by(
         assigned_lecturer_id=lecturer.id, is_active=True
     ).all()
 
-    # Also get courses created by this lecturer (HOD)
     created_courses = Course.query.filter_by(
         created_by_id=lecturer.id, is_active=True
     ).all()
 
-    # Combine unique courses
     all_course_ids = set()
     active_courses = []
     for c in assigned_courses + created_courses:
@@ -188,7 +186,6 @@ def dashboard():
     draft_courses = [c for c in active_courses if c.approval_status == 'draft']
     total_students = sum(len(c.students) for c in active_courses)
 
-    # Pending approvals based on role
     pending_course = 0
     pending_grades = 0
     pending_ref = 0
@@ -232,7 +229,6 @@ def dashboard():
             submission_type='reference', status='pending_exam'
         ).count()
 
-    # My pending submissions (as a lecturer)
     my_pending = ApprovalRequest.query.filter_by(creator_id=lecturer.id).filter(
         ApprovalRequest.status.in_(['pending_hod', 'pending_dean', 'pending_exam'])
     ).count()
@@ -241,6 +237,21 @@ def dashboard():
         user_id=lecturer.id, user_type='lecturer',
         is_read=False, is_dismissed=False
     ).count()
+
+    # ✅ AI Summary
+    ai_summary = ""
+    try:
+        ai_summary = generate_dashboard_summary({
+            'total_students': total_students,
+            'active_courses': len(active_courses),
+            'draft_courses': len(draft_courses),
+            'pending_submissions': my_pending,
+            'pending_approvals': pending_course + pending_grades + pending_ref,
+            'unread_notifications': unread,
+        })
+    except Exception as e:
+        print(f"AI Summary error: {e}")
+        ai_summary = f"You have {len(active_courses)} active courses with {total_students} students. {my_pending} submissions are pending."
 
     return jsonify({
         'lecturer': lecturer.to_dict(),
@@ -254,7 +265,8 @@ def dashboard():
             'total_pending_approvals': pending_course + pending_grades + pending_ref,
             'unread_notifications': unread,
             'my_pending_submissions': my_pending,
-        }
+        },
+        'ai_summary': ai_summary,
     })
 
 
