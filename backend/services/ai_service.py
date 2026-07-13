@@ -52,3 +52,77 @@ def ask_ai(question, student_data=None):
         if 'hello' in question.lower() or 'hi' in question.lower():
             return f"Hello! Your GPA is {gpa}. How can I help you today?"
         return "I'm here to help with your academic questions."
+    
+
+
+def generate_gpa_prediction(student_data):
+    """Generate GPA prediction using OpenRouter"""
+    try:
+        response = requests.post(
+            OPENROUTER_URL,
+            headers={
+                'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': 'google/gemini-2.0-flash-001',
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': 'You are a GPA prediction system. Return ONLY valid JSON with prediction and recommendations.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': f"Based on GPA {student_data.get('latest_gpa')}, predict future performance and give 3 tips. Format: {{\"prediction\": \"...\", \"recommendations\": [\"...\", \"...\", \"...\"]}}"
+                    }
+                ],
+                'max_tokens': 200,
+            },
+            timeout=30
+        )
+        
+        data = response.json()
+        text = data['choices'][0]['message']['content']
+        
+        if '{' in text and '}' in text:
+            start = text.index('{')
+            end = text.rindex('}') + 1
+            return json.loads(text[start:end])
+        
+        return {"prediction": "Keep up the good work!", "recommendations": ["Stay consistent", "Review past exams", "Attend all lectures"]}
+        
+    except:
+        return {"prediction": "Continue your current performance.", "recommendations": ["Focus on weak areas", "Practice regularly", "Seek help when needed"]}
+
+
+def generate_dashboard_summary(stats):
+    """Generate dashboard summary using OpenRouter"""
+    try:
+        response = requests.post(
+            OPENROUTER_URL,
+            headers={
+                'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': 'google/gemini-2.0-flash-001',
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': 'Summarize university statistics in 2-3 friendly sentences.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': f"Stats: {stats}"
+                    }
+                ],
+                'max_tokens': 150,
+            },
+            timeout=30
+        )
+        
+        data = response.json()
+        return data['choices'][0]['message']['content'].strip()
+        
+    except:
+        return f"The system has {stats.get('total_students', 0)} students and {stats.get('total_courses', 0)} active courses."    
