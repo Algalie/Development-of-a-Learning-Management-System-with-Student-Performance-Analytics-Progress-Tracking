@@ -13,17 +13,19 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
-    # ✅ Mail configuration
+    # Mail configuration
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'your-email@gmail.com')
-    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'your-app-password')
-    app.config['MAIL_DEFAULT_SENDER'] = ('MMTU Exams Portal', os.environ.get('MAIL_USERNAME', 'noreply@mmtu.edu.sl'))
+    app.config['MAIL_USE_SSL'] = False
+    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+    app.config['MAIL_TIMEOUT'] = 30
     
     CORS(app, supports_credentials=True, origins=app.config['CORS_ORIGINS'])
     db.init_app(app)
-    mail.init_app(app)  # ← ADD this
+    mail.init_app(app)
     
     register_error_handlers(app)
     
@@ -54,7 +56,7 @@ def seed_default_data():
     if not admin:
         db.session.add(Admin(
             username='Kamara',
-            email='kamaraalgalie@gmail.com',  # ← FIXED typo
+            email='kamaraalgalie@gmail.com',
             password='default123',
             full_name='Algalie Kamara',
             role='super_admin'
