@@ -1934,4 +1934,97 @@ def notify_lecturer_missing():
     return jsonify({'message': f'Notification sent to lecturer'})
 
 
+@admin_bp.route('/api/ai-transcript', methods=['POST'])
+@token_required
+def ai_transcript():
+    """Generate AI-powered transcript analysis"""
+    if request.user['user_type'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    from services.ai_service import ask_ai
+    from models.gpa import StudentGPA
+    from models.academic import CourseStudent
+    from models.reference import ReferenceGrade
+    
+    data = request.get_json() or {}
+    student_id = data.get('student_id', '')
+    
+    if not student_id:
+        return jsonify({'error': 'Student ID required'}), 400
+    
+    # Collect student data
+    gpas = StudentGPA.query.filter_by(student_id=student_id).order_by(
+        StudentGPA.academic_year.asc(), StudentGPA.semester.asc()
+    ).all()
+    
+    enrollments = CourseStudent.query.filter_by(student_id=student_id).all()
+    
+    student_name = enrollments[0].student_name if enrollments else 'Unknown'
+    
+    # Calculate CGPA
+    total_points = sum((g.total_credit_hours or 0) * (g.gpa or 0) for g in gpas)
+    total_credits = sum(g.total_credit_hours or 0 for g in gpas)
+    cgpa = round(total_points / total_credits, 2) if total_credits > 0 else 0
+    
+    # Analyze grades
+    all_grades = {}
+    for e in enrollments:
+        if e.grade:
+            all_grades[e.course.course_code] = {
+                'course_name': e.course.course_name,
+                'grade': e.grade,
+                'score': e.total_score,
+                'points': e.grade_points,
+            }
+    
+    # Get references
+    refs = ReferenceGrade.query.join(CourseStudent).filter(
+        CourseStudent.student_id == student_id
+    ).all()
+    
+    pending_refs = [r for r in refs if r.reference_status == 'pending']
+    double_fails = [r for r in refs if r.reference_status == 'double_fail']
+    cleared_refs = [r for r in refs if r.reference_status == 'cleared']
+    
+    # Find strengths and weaknesses
+    grade_values = {'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'F': 0}
+    strengths = [k for k, v in all_grades.items() if grade_values.get(v['grade'], 0) >= 4]
+    weaknesses = [k for k, v in all_grades.items() if grade_values.get(v['grade'], 0) <= 2]
+    
+    # Build data for AI
+    student_data = {
+        'student_name': student_name,
+        'student_id': student_id,
+        'cgpa': cgpa,
+        'total_courses': len(all_grades),
+        'strengths': strengths,
+        'weaknesses': weaknesses,
+        'pending_references': len(pending_refs),
+        'double_fails': len(double_fails),
+        'cleared_references': len(cleared_refs),
+        'semesters_completed': len(gpas),
+        'total_credits': total_credits,
+    }
+    
+    # Get AI analysis
+    question = f"Analyze this student's academic performance. Name: {student_name}, CGPA: {cgpa}, Strengths: {', '.join(strengths) if strengths else 'None'}, Weaknesses: {', '.join(weaknesses) if weaknesses else 'None'}, Pending References: {len(pending_refs)}, Double Fails: {len(double_fails)}. Provide: 1) A professional 2-3 sentence summary of their academic standing. 2) What areas they excel at. 3) What areas need improvement. 4) A recommendation for their next steps."
+    
+    ai_analysis = ask_ai(question, student_data)
+    
+    return jsonify({
+        'student_name': student_name,
+        'student_id': student_id,
+        'cgpa': cgpa,
+        'total_credits': total_credits,
+        'total_courses': len(all_grades),
+        'semesters_completed': len(gpas),
+        'strengths': [{'code': k, 'name': all_grades[k]['course_name'], 'grade': all_grades[k]['grade']} for k in strengths],
+        'weaknesses': [{'code': k, 'name': all_grades[k]['course_name'], 'grade': all_grades[k]['grade']} for k in weaknesses],
+        'pending_references': len(pending_refs),
+        'double_fails': len(double_fails),
+        'cleared_references': len(cleared_refs),
+        'ai_analysis': ai_analysis,
+        'grades': all_grades,
+    })
+
 # Also add this to lecturer routes so HOD can forward from their side
