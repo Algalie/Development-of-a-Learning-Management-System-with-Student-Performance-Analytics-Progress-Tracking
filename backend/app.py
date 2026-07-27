@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config import config
-from extensions import db, mail
+from extensions import db
 import os
 from routes.student import student_bp
 from routes.analytics import analytics_bp
@@ -13,19 +13,8 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
-    # Mail configuration
-    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-    app.config['MAIL_PORT'] = 587
-    app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USE_SSL'] = False
-    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
-    app.config['MAIL_TIMEOUT'] = 30
-    
     CORS(app, supports_credentials=True, origins=app.config['CORS_ORIGINS'])
     db.init_app(app)
-    mail.init_app(app)
     
     register_error_handlers(app)
     
