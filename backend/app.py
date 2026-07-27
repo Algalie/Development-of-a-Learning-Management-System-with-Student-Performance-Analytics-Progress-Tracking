@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config import config
-from extensions import db
+from extensions import db, mail
 import os
 from routes.student import student_bp
 from routes.analytics import analytics_bp
@@ -13,8 +13,17 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
+    # ✅ Mail configuration
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'your-email@gmail.com')
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'your-app-password')
+    app.config['MAIL_DEFAULT_SENDER'] = ('MMTU Exams Portal', os.environ.get('MAIL_USERNAME', 'noreply@mmtu.edu.sl'))
+    
     CORS(app, supports_credentials=True, origins=app.config['CORS_ORIGINS'])
     db.init_app(app)
+    mail.init_app(app)  # ← ADD this
     
     register_error_handlers(app)
     
@@ -33,8 +42,6 @@ def create_app(config_name=None):
         app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
         app.register_blueprint(student_bp, url_prefix='/student')
 
-
-    
     @app.route('/api/health')
     def health_check():
         return jsonify({'status': 'healthy', 'version': '2.0.0'})
@@ -47,7 +54,7 @@ def seed_default_data():
     if not admin:
         db.session.add(Admin(
             username='Kamara',
-            email='kamaraalgalie&&@gmail.com',
+            email='kamaraalgalie@gmail.com',  # ← FIXED typo
             password='default123',
             full_name='Algalie Kamara',
             role='super_admin'
