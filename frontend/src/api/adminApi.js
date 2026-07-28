@@ -147,4 +147,8 @@ export const adminApi = {
 
   notifyLecturerMissing: (data) =>
     axios.post(`${API_URL}/admin/api/block-gpa/notify-lecturer`, data, { headers: getAuthHeaders() }),
+
+    // AI TRANSCRIPT
+  getAITranscript: (data) =>
+    axios.post(`${API_URL}/admin/api/ai-transcript`, data, { headers: getAuthHeaders() }),
 };

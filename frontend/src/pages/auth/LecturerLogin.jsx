@@ -8,6 +8,7 @@ import ShakeOnMount from '../../components/animations/ShakeOnMount';
 import DarkModeToggle from '../../components/common/DarkModeToggle';
 import { FaChalkboardTeacher, FaUniversity, FaArrowLeft, FaArrowRight, FaLock, FaIdCard } from 'react-icons/fa';
 import logo from '../../assets/images/logo.png';
+import lecturerBg from '../../assets/images/images (56).jpg';
 
 const LecturerLogin = () => {
   const [formData, setFormData] = useState({ lecturer_id: '', password: '' });
@@ -57,21 +58,30 @@ const LecturerLogin = () => {
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
         style={{
-          flex: '0 0 45%', background: 'linear-gradient(160deg, #0A2A66 0%, #0d3b8c 40%, #0A2A66 100%)',
+          flex: '0 0 45%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '3rem', position: 'relative', overflow: 'hidden',
         }}
       >
+        {/* Background Image */}
         <div style={{
-          position: 'absolute', top: -60, right: -60,
-          width: '300px', height: '300px', borderRadius: '50%',
-          background: 'rgba(255,193,7,0.04)', pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: -40, left: -40,
-          width: '200px', height: '200px', borderRadius: '50%',
-          background: 'rgba(255,255,255,0.03)', pointerEvents: 'none',
-        }} />
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 0,
+        }}>
+          <img 
+            src={lecturerBg}
+            alt="MMTU Background"
+            style={{ 
+              width: '100%', height: '100%', objectFit: 'cover',
+              filter: 'brightness(1.3)',
+            }}
+          />
+          {/* Dark overlay for readability */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0, 0, 0, 0.45)',
+          }} />
+        </div>
 
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '420px' }}>
           <motion.div
@@ -96,7 +106,7 @@ const LecturerLogin = () => {
           <FadeIn delay={0.5}>
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{
-                fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600,
+                fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600,
                 textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px',
               }}>
                 Milton Margai Technical University
@@ -116,7 +126,7 @@ const LecturerLogin = () => {
             </div>
 
             <p style={{
-              color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem',
+              color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem',
               lineHeight: 1.6, marginBottom: '2rem',
             }}>
               Enter grades, track student performance, manage courses, 
@@ -128,16 +138,18 @@ const LecturerLogin = () => {
               flexWrap: 'wrap',
             }}>
               <div style={{
-                background: 'rgba(255,255,255,0.08)', padding: '0.5rem 1rem',
-                borderRadius: '20px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)',
+                background: 'rgba(255,255,255,0.12)', padding: '0.5rem 1rem',
+                borderRadius: '20px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.85)',
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
+                border: '1px solid rgba(255,255,255,0.15)',
               }}>
                 <FaChalkboardTeacher style={{ color: '#FFC107', fontSize: '0.7rem' }} />
                 Lecturer Access
               </div>
               <div style={{
-                background: 'rgba(255,255,255,0.08)', padding: '0.5rem 1rem',
-                borderRadius: '20px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)',
+                background: 'rgba(255,255,255,0.12)', padding: '0.5rem 1rem',
+                borderRadius: '20px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.85)',
+                border: '1px solid rgba(255,255,255,0.15)',
               }}>
                 2FA Secured
               </div>
@@ -145,9 +157,10 @@ const LecturerLogin = () => {
           </FadeIn>
 
           <Link to="/" style={{
-            marginTop: '3rem', color: 'rgba(255,255,255,0.5)',
+            marginTop: '3rem', color: 'rgba(255,255,255,0.6)',
             textDecoration: 'none', display: 'inline-flex', alignItems: 'center',
             gap: '6px', fontSize: '0.8rem', fontWeight: 500,
+            transition: 'all 0.2s',
           }}>
             <FaArrowLeft style={{ fontSize: '0.7rem' }} /> Back to Home
           </Link>
@@ -167,7 +180,6 @@ const LecturerLogin = () => {
       >
         <div style={{ width: '100%', maxWidth: '440px' }}>
           
-          {/* Dark Mode Toggle */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
             <DarkModeToggle />
           </div>
@@ -209,7 +221,6 @@ const LecturerLogin = () => {
               border: '1px solid var(--border)',
               boxShadow: '0 10px 40px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)',
             }}>
-              {/* Lecturer Icon */}
               <div style={{
                 width: '65px', height: '65px', borderRadius: '18px',
                 background: 'rgba(255,193,7,0.1)', display: 'flex', alignItems: 'center',

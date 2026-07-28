@@ -33,11 +33,8 @@ const Dashboard = () => {
       const hasMultipleRoles = user?.role === 'head_of_department' || user?.role === 'dean';
       const popupAlreadyShown = sessionStorage.getItem('role_popup_shown');
       
-      // ✅ Always show popup if it hasn't been shown this session
-      if (hasMultipleRoles && popupAlreadyShown !== 'true') {
-        setTimeout(() => {
-          setShowRoleModal(true);
-        }, 800);
+      if (hasMultipleRoles && !popupAlreadyShown) {
+        setTimeout(() => { setShowRoleModal(true); }, 800);
         sessionStorage.setItem('role_popup_shown', 'true');
       }
     }
@@ -47,14 +44,9 @@ const Dashboard = () => {
     sessionStorage.setItem('active_role', choice);
     setActiveRole(choice);
     setShowRoleModal(false);
-    
-    if (choice === 'hod') {
-      toast.success('Switched to HOD Dashboard', { duration: 1000 });
-    } else if (choice === 'dean') {
-      toast.success('Switched to Dean Dashboard', { duration: 1000 });
-    } else {
-      toast.success('Welcome to your Dashboard', { duration: 1000 });
-    }
+    if (choice === 'hod') toast.success('Switched to HOD Dashboard', { duration: 1000 });
+    else if (choice === 'dean') toast.success('Switched to Dean Dashboard', { duration: 1000 });
+    else toast.success('Welcome to your Dashboard', { duration: 1000 });
   };
 
   const fetchStats = async () => {
@@ -63,14 +55,10 @@ const Dashboard = () => {
       setStats(res.data.stats || res.data);
     } catch (error) {
       console.error('Dashboard error:', error);
-    } finally { 
-      setLoading(false); 
-    }
+    } finally { setLoading(false); }
   };
 
-  const isApprover = (user?.role === 'head_of_department' || user?.role === 'dean' || user?.role === 'exam_officer') 
-    && activeRole !== 'lecturer';
-  
+  const isApprover = (user?.role === 'head_of_department' || user?.role === 'dean' || user?.role === 'exam_officer') && activeRole !== 'lecturer';
   const canCreateCourses = user?.role === 'head_of_department' && activeRole !== 'lecturer';
   const isHodOrDean = user?.role === 'head_of_department' || user?.role === 'dean';
   const isOrdinaryLecturer = user?.role === 'lecturer';
@@ -112,84 +100,36 @@ const Dashboard = () => {
       
       <AnimatePresence>
         {showRoleModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-              background: 'rgba(15,23,42,0.7)', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)',
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.85, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.85, opacity: 0, y: 20 }}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15,23,42,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }}>
+            <motion.div initial={{ scale: 0.85, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.85, opacity: 0, y: 20 }}
               onClick={e => e.stopPropagation()}
-              style={{
-                background: cardBg, borderRadius: '24px', padding: '2.5rem 2rem',
-                maxWidth: '480px', width: '90%', textAlign: 'center',
-                boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
-                border: `1px solid ${border}`,
-              }}
-            >
-              <div style={{
-                width: '72px', height: '72px', borderRadius: '20px',
-                background: 'rgba(10,42,102,0.08)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 1.2rem', fontSize: '2rem',
-              }}>
-                <FaExchangeAlt style={{ color: '#0A2A66' }} />
-              </div>
-              
-              <h2 style={{ color: '#0A2A66', fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                Choose Your Dashboard
-              </h2>
-              <p style={{ color: textSec, fontSize: '0.9rem', marginBottom: '1.8rem', lineHeight: 1.5 }}>
-                You have access to multiple roles. Which dashboard would you like to use?
-              </p>
-
+              style={{ background: cardBg, borderRadius: '24px', padding: '2.5rem 2rem', maxWidth: '480px', width: '90%', textAlign: 'center', boxShadow: '0 25px 60px rgba(0,0,0,0.3)', border: `1px solid ${border}` }}>
+              <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'rgba(10,42,102,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.2rem', fontSize: '2rem' }}><FaExchangeAlt style={{ color: '#0A2A66' }} /></div>
+              <h2 style={{ color: '#0A2A66', fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.5rem' }}>Choose Your Dashboard</h2>
+              <p style={{ color: textSec, fontSize: '0.9rem', marginBottom: '1.8rem', lineHeight: 1.5 }}>You have access to multiple roles.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <button onClick={() => handleRoleChoice('lecturer')}
-                  style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: `2px solid ${border}`, background: cardBgHover, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                  style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: `2px solid ${border}`, background: cardBgHover, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', fontFamily: 'Inter, sans-serif' }}>
                   <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#f0f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0A2A66', fontSize: '1.1rem' }}><FaChalkboardTeacher /></div>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontWeight: 600, color: '#0A2A66', fontSize: '0.95rem' }}>Lecturer Dashboard</div>
-                    <div style={{ color: textSec, fontSize: '0.8rem' }}>Manage courses, enter grades, view students</div>
-                  </div>
-                  <FaArrowRight style={{ marginLeft: 'auto', color: textMuted }} />
+                  <div style={{ textAlign: 'left' }}><div style={{ fontWeight: 600, color: '#0A2A66', fontSize: '0.95rem' }}>Lecturer Dashboard</div><div style={{ color: textSec, fontSize: '0.8rem' }}>Manage courses, enter grades, view students</div></div>
                 </button>
-
                 {user?.role === 'head_of_department' && (
                   <button onClick={() => handleRoleChoice('hod')}
-                    style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: '2px solid #FFC107', background: '#fefce8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                    style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: '2px solid #FFC107', background: '#fefce8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', fontFamily: 'Inter, sans-serif' }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ca8a04', fontSize: '1.1rem' }}><FaUserShield /></div>
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontWeight: 600, color: '#0A2A66', fontSize: '0.95rem' }}>HOD Dashboard</div>
-                      <div style={{ color: '#854d0e', fontSize: '0.8rem' }}>Create courses, approve submissions, manage department</div>
-                    </div>
-                    <FaArrowRight style={{ marginLeft: 'auto', color: '#ca8a04' }} />
+                    <div style={{ textAlign: 'left' }}><div style={{ fontWeight: 600, color: '#0A2A66', fontSize: '0.95rem' }}>HOD Dashboard</div><div style={{ color: '#854d0e', fontSize: '0.8rem' }}>Create courses, approve submissions</div></div>
                   </button>
                 )}
-
                 {user?.role === 'dean' && (
                   <button onClick={() => handleRoleChoice('dean')}
-                    style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: '2px solid #7c3aed', background: '#f5f3ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', fontFamily: 'Inter, sans-serif', transition: 'all 0.2s' }}>
+                    style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: '2px solid #7c3aed', background: '#f5f3ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', fontFamily: 'Inter, sans-serif' }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7c3aed', fontSize: '1.1rem' }}><FaUserShield /></div>
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontWeight: 600, color: '#0A2A66', fontSize: '0.95rem' }}>Dean Dashboard</div>
-                      <div style={{ color: '#6d28d9', fontSize: '0.8rem' }}>Approve submissions, manage faculty, oversight</div>
-                    </div>
-                    <FaArrowRight style={{ marginLeft: 'auto', color: '#7c3aed' }} />
+                    <div style={{ textAlign: 'left' }}><div style={{ fontWeight: 600, color: '#0A2A66', fontSize: '0.95rem' }}>Dean Dashboard</div><div style={{ color: '#6d28d9', fontSize: '0.8rem' }}>Approve submissions, manage faculty</div></div>
                   </button>
                 )}
               </div>
-
-              <button onClick={() => handleRoleChoice('lecturer')}
-                style={{ marginTop: '1rem', background: 'none', border: 'none', color: textMuted, cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif' }}>
-                <FaTimes style={{ marginRight: '0.3rem', fontSize: '0.7rem' }} /> Continue as Lecturer
-              </button>
+              <button onClick={() => handleRoleChoice('lecturer')} style={{ marginTop: '1rem', background: 'none', border: 'none', color: textMuted, cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif' }}><FaTimes style={{ marginRight: '0.3rem', fontSize: '0.7rem' }} /> Continue as Lecturer</button>
             </motion.div>
           </motion.div>
         )}
@@ -199,25 +139,14 @@ const Dashboard = () => {
         <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#0A2A66', marginBottom: '0.3rem' }}>
-              {isOrdinaryLecturer ? `${user?.full_name?.split(' ')[0] || 'Lecturer'}'s Dashboard`
-                : activeRole === 'hod' ? "HOD's Dashboard" 
-                : activeRole === 'dean' ? "Dean's Dashboard" 
-                : `${user?.full_name?.split(' ')[0] || 'Lecturer'}'s Dashboard`}
+              {isOrdinaryLecturer ? `${user?.full_name?.split(' ')[0] || 'Lecturer'}'s Dashboard` : activeRole === 'hod' ? "HOD's Dashboard" : activeRole === 'dean' ? "Dean's Dashboard" : `${user?.full_name?.split(' ')[0] || 'Lecturer'}'s Dashboard`}
             </h1>
             <p style={{ color: textSec, fontSize: '0.95rem' }}>
               {user?.department || user?.display_department || 'Department'} · {user?.role?.replace(/_/g, ' ') || 'Lecturer'}
-              {activeRole !== 'lecturer' && !isOrdinaryLecturer && (
-                <span style={{ marginLeft: '0.5rem', color: '#FFC107', fontWeight: 600 }}>({activeRole.toUpperCase()} Mode)</span>
-              )}
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {isHodOrDean && (
-              <button onClick={() => setShowRoleModal(true)}
-                style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: cardBgHover, border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 500, color: '#0A2A66', fontFamily: 'Inter, sans-serif' }}>
-                <FaExchangeAlt /> Switch Role
-              </button>
-            )}
+            {isHodOrDean && <button onClick={() => setShowRoleModal(true)} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: cardBgHover, border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 500, color: '#0A2A66', fontFamily: 'Inter, sans-serif' }}><FaExchangeAlt /> Switch Role</button>}
             <DarkModeToggle />
           </div>
         </div>
@@ -226,10 +155,7 @@ const Dashboard = () => {
       {stats?.unread_notifications > 0 && (
         <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
           style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: '10px', padding: '0.9rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <FaBell style={{ color: '#ca8a04', fontSize: '1.1rem' }} />
-            <span style={{ color: '#854d0e', fontSize: '0.9rem' }}>You have <strong>{stats.unread_notifications}</strong> unread notification{stats.unread_notifications > 1 ? 's' : ''}</span>
-          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><FaBell style={{ color: '#ca8a04', fontSize: '1.1rem' }} /><span style={{ color: '#854d0e', fontSize: '0.9rem' }}>You have <strong>{stats.unread_notifications}</strong> unread notification{stats.unread_notifications > 1 ? 's' : ''}</span></div>
           <Link to="/lecturer/notifications" style={{ color: '#0A2A66', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>View <FaArrowRight style={{ fontSize: '0.7rem' }} /></Link>
         </motion.div>
       )}
@@ -247,10 +173,7 @@ const Dashboard = () => {
         </div>
       </ShakeOnMount>
 
-      <FadeIn delay={0.1}>
-        <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#0A2A66', marginBottom: '1rem' }}>Quick Actions</h2>
-      </FadeIn>
-
+      <FadeIn delay={0.1}><h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#0A2A66', marginBottom: '1rem' }}>Quick Actions</h2></FadeIn>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${primaryActions.length}, 1fr)`, gap: '1rem', marginBottom: '2rem' }}>
         {primaryActions.map((action, i) => (
           <FadeIn key={i} delay={0.1 + i * 0.05}>
@@ -268,12 +191,7 @@ const Dashboard = () => {
 
       {isApprover && (
         <>
-          <FadeIn delay={0.2}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#0A2A66' }}>Pending Approvals</h2>
-              <Link to="/lecturer/pending-approvals" style={{ color: '#0A2A66', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>View All <FaArrowRight style={{ fontSize: '0.7rem' }} /></Link>
-            </div>
-          </FadeIn>
+          <FadeIn delay={0.2}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}><h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#0A2A66' }}>Pending Approvals</h2><Link to="/lecturer/pending-approvals" style={{ color: '#0A2A66', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>View All <FaArrowRight style={{ fontSize: '0.7rem' }} /></Link></div></FadeIn>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
             {[
               { icon: <FaBook />, value: stats?.pending_course_approvals || 0, label: 'Course', bg: '#f0f4ff', color: '#0A2A66', tab: 'courses' },

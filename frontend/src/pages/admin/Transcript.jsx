@@ -12,7 +12,8 @@ import {
   FaCheckCircle, FaTimesCircle, FaFileAlt,
   FaSave, FaTimes, FaPrint, FaShieldAlt, FaUniversity, FaCalendarAlt,
   FaSyncAlt, FaIdCard, FaBookOpen, FaBarcode, FaClock,
-  FaToggleOn, FaToggleOff, FaBan, FaLock
+  FaToggleOn, FaToggleOff, FaBan, FaLock, FaRobot, FaBrain,
+  FaChartLine, FaStar, FaLightbulb, FaArrowUp, FaArrowDown
 } from 'react-icons/fa';
 import Barcode from 'react-barcode';
 import logo from '../../assets/images/logo.png';
@@ -24,6 +25,11 @@ const Transcript = () => {
   const [studentName, setStudentName] = useState('');
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+
+  // 🔘 NEW: AI Mode Toggle
+  const [transcriptMode, setTranscriptMode] = useState('normal'); // 'normal' | 'ai'
+  const [aiData, setAiData] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const [departments, setDepartments] = useState([]);
   const [deptFilters, setDeptFilters] = useState({ dept_id: '', program: '', level: '', academic_year: '' });
@@ -41,7 +47,6 @@ const Transcript = () => {
   const [showVerifyTranscript, setShowVerifyTranscript] = useState(false);
   const [verifyTranscriptData, setVerifyTranscriptData] = useState(null);
 
-  // Override mode for demo/testing
   const [overrideMode, setOverrideMode] = useState(false);
 
   const cardBg = 'var(--card-bg)';
@@ -69,7 +74,7 @@ const Transcript = () => {
 
   const fetchTranscript = async () => {
     if (!studentId.trim()) { toast.error('Please enter a student ID'); return; }
-    setLoading(true); setSearched(true); setStudentData(null);
+    setLoading(true); setSearched(true); setStudentData(null); setAiData(null);
     try {
       const res = await adminApi.getTranscript(studentId);
       setStudentData(res.data.student_data || null);
@@ -79,6 +84,30 @@ const Transcript = () => {
       toast.error('Failed to fetch transcript');
       setStudentData(null);
     } finally { setLoading(false); }
+  };
+
+  // 🤖 NEW: Fetch AI Transcript Analysis
+  const fetchAITranscript = async () => {
+    if (!studentId.trim()) { toast.error('Please enter a student ID'); return; }
+    setAiLoading(true); setSearched(true); setAiData(null);
+    try {
+      const res = await adminApi.getAITranscript({ student_id: studentId });
+      setAiData(res.data);
+      setStudentName(res.data.student_name || '');
+      if (!res.data.ai_analysis) toast.error('AI analysis failed');
+    } catch (error) {
+      toast.error('AI analysis failed. Falling back to normal mode.');
+      setAiData(null);
+    } finally { setAiLoading(false); }
+  };
+
+  // Combined fetch based on mode
+  const handleFetchData = () => {
+    if (transcriptMode === 'ai') {
+      fetchAITranscript();
+    } else {
+      fetchTranscript();
+    }
   };
 
   const queryDepartment = async () => {
@@ -199,7 +228,6 @@ const Transcript = () => {
     setSavedId('');
     setShowTranscript(true);
 
-    // Auto-save immediately
     setSaving(true);
     try {
       const response = await adminApi.saveTranscript({
@@ -217,6 +245,8 @@ const Transcript = () => {
           generatedBy: user?.full_name || 'Admin',
           generatedAt: new Date().toISOString(),
           overrideMode: overrideMode,
+          mode: transcriptMode,
+          aiData: aiData,
         }
       });
       setSavedId(response.data.transcript_id);
@@ -259,16 +289,19 @@ const Transcript = () => {
     if (details) details.style.display = details.style.display === 'block' ? 'none' : 'block';
   };
 
-  // Check transcript eligibility
   const hasWarnings = studentData?.some(s => ['FAIL', 'WITHDREW', 'DOUBLE_FAIL'].includes(s.status));
   const hasDoubleFail = studentData?.some(s => s.status === 'DOUBLE_FAIL' || s.has_double_fail);
   const hasCompletedFinalYear = studentData?.some(sem => 
     sem.level === 'Year 4' || sem.level === 'Level 400' || 
     sem.level === 'Year 5' || sem.level === 'Level 500'
   );
-  const canGenerateTranscript = overrideMode || (!hasDoubleFail && !hasWarnings && hasCompletedFinalYear && studentData?.length > 0);
   
-  const cgpa = calculateCGPA();
+  // For AI mode, always allow generation if AI data exists
+  const canGenerateTranscript = transcriptMode === 'ai' 
+    ? (aiData?.ai_analysis ? true : false)
+    : (overrideMode || (!hasDoubleFail && !hasWarnings && hasCompletedFinalYear && studentData?.length > 0));
+  
+  const cgpa = transcriptMode === 'ai' && aiData ? aiData.cgpa : calculateCGPA();
 
   return (
     <div className="dashboard-container">
@@ -314,7 +347,14 @@ const Transcript = () => {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <h1 style={{ color: '#0A2A66', fontSize: '1.4rem', fontWeight: 800, margin: 0, letterSpacing: '3px', textTransform: 'uppercase' }}>Transcript</h1>
+                    <h1 style={{ color: '#0A2A66', fontSize: '1.4rem', fontWeight: 800, margin: 0, letterSpacing: '3px', textTransform: 'uppercase' }}>
+                      {transcriptMode === 'ai' ? 'AI Transcript' : 'Transcript'}
+                    </h1>
+                    {transcriptMode === 'ai' && (
+                      <span style={{ fontSize: '0.65rem', background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', padding: '3px 10px', borderRadius: '20px', fontWeight: 600, marginTop: '4px', display: 'inline-block' }}>
+                        <FaRobot style={{ marginRight: '4px', fontSize: '0.6rem' }} /> AI-Powered
+                      </span>
+                    )}
                     {transcriptId && (
                       <div style={{ background: '#f0f4ff', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.65rem', fontWeight: 700, color: '#0A2A66', fontFamily: 'monospace', marginTop: '6px', display: 'inline-block' }}>{transcriptId}</div>
                     )}
@@ -352,8 +392,87 @@ const Transcript = () => {
                   </div>
                 </div>
 
-                {/* Semester Sections */}
-                {studentData?.map((semester, i) => (
+                {/* 🤖 AI ANALYSIS SECTION - Only in AI mode */}
+                {transcriptMode === 'ai' && aiData?.ai_analysis && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    {/* AI Summary Card */}
+                    <div style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)', borderRadius: '20px', padding: '1.5rem 2rem', marginBottom: '1.2rem', color: 'white' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                        <FaBrain style={{ fontSize: '1.5rem' }} />
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>AI Academic Analysis</h3>
+                      </div>
+                      <p style={{ fontSize: '0.9rem', lineHeight: 1.7, opacity: 0.95, margin: 0, whiteSpace: 'pre-line' }}>
+                        {aiData.ai_analysis}
+                      </p>
+                    </div>
+
+                    {/* Strengths & Weaknesses Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+                      {/* Strengths */}
+                      <div style={{ background: '#ecfdf5', borderRadius: '16px', padding: '1.2rem', border: '1px solid #a7f3d0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
+                          <FaStar style={{ color: '#059669', fontSize: '1rem' }} />
+                          <h4 style={{ color: '#059669', fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>Areas of Strength</h4>
+                        </div>
+                        {aiData.strengths && aiData.strengths.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {aiData.strengths.map((s, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'white', padding: '0.5rem 0.75rem', borderRadius: '10px' }}>
+                                <FaArrowUp style={{ color: '#059669', fontSize: '0.7rem' }} />
+                                <span style={{ fontWeight: 600, color: '#059669', fontSize: '0.8rem' }}>{s.code}</span>
+                                <span style={{ color: '#065f46', fontSize: '0.8rem' }}>{s.name}</span>
+                                <span style={{ marginLeft: 'auto', padding: '2px 8px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 700, color: '#059669', background: '#d1fae5' }}>{s.grade}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p style={{ color: '#6b7280', fontSize: '0.8rem', margin: 0 }}>No strong areas identified yet.</p>
+                        )}
+                      </div>
+
+                      {/* Weaknesses */}
+                      <div style={{ background: '#fef2f2', borderRadius: '16px', padding: '1.2rem', border: '1px solid #fecaca' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
+                          <FaExclamationTriangle style={{ color: '#dc2626', fontSize: '1rem' }} />
+                          <h4 style={{ color: '#dc2626', fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>Areas Needing Improvement</h4>
+                        </div>
+                        {aiData.weaknesses && aiData.weaknesses.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {aiData.weaknesses.map((w, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'white', padding: '0.5rem 0.75rem', borderRadius: '10px' }}>
+                                <FaArrowDown style={{ color: '#dc2626', fontSize: '0.7rem' }} />
+                                <span style={{ fontWeight: 600, color: '#dc2626', fontSize: '0.8rem' }}>{w.code}</span>
+                                <span style={{ color: '#991b1b', fontSize: '0.8rem' }}>{w.name}</span>
+                                <span style={{ marginLeft: 'auto', padding: '2px 8px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 700, color: '#dc2626', background: '#fee2e2' }}>{w.grade}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p style={{ color: '#6b7280', fontSize: '0.8rem', margin: 0 }}>No weak areas identified.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* AI Stats Row */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.8rem', marginTop: '1rem' }}>
+                      {[
+                        { icon: <FaChartLine />, label: 'CGPA', value: aiData.cgpa?.toFixed(2) || 'N/A', color: '#7c3aed' },
+                        { icon: <FaBookOpen />, label: 'Total Courses', value: aiData.total_courses || 0, color: '#2563eb' },
+                        { icon: <FaCheckCircle />, label: 'Cleared Refs', value: aiData.cleared_references || 0, color: '#059669' },
+                        { icon: <FaExclamationTriangle />, label: 'Double Fails', value: aiData.double_fails || 0, color: '#dc2626' },
+                      ].map((stat, i) => (
+                        <div key={i} style={{ background: 'white', borderRadius: '14px', padding: '1rem', border: `1px solid ${border}`, textAlign: 'center' }}>
+                          <div style={{ color: stat.color, fontSize: '1.2rem', marginBottom: '0.3rem' }}>{stat.icon}</div>
+                          <div style={{ fontSize: '0.65rem', color: textMuted, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px', marginBottom: '2px' }}>{stat.label}</div>
+                          <div style={{ fontSize: '1.3rem', fontWeight: 800, color: stat.color }}>{stat.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Normal Semester Sections - Only in normal mode */}
+                {transcriptMode === 'normal' && studentData?.map((semester, i) => (
                   <div key={i} style={{ marginBottom: '1.2rem', pageBreakInside: 'avoid' }}>
                     <div style={{ background: semester.status === 'DOUBLE_FAIL' ? 'linear-gradient(135deg, #831843 0%, #be185d 100%)' : semester.status === 'FAIL' || semester.status === 'WITHDREW' ? 'linear-gradient(135deg, #991b1b 0%, #dc2626 100%)' : 'linear-gradient(135deg, #0A2A66 0%, #1e40af 100%)', color: 'white', padding: '0.7rem 1.5rem', borderRadius: '16px 16px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{semester.academic_year} — {semester.level} {semester.semester}</span>
@@ -404,18 +523,51 @@ const Transcript = () => {
                   </div>
                 ))}
 
+                {/* AI Mode Grades Table */}
+                {transcriptMode === 'ai' && aiData?.grades && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)', color: 'white', padding: '0.7rem 1.5rem', borderRadius: '16px 16px 0 0' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>📊 Complete Grade Summary</span>
+                    </div>
+                    <div style={{ border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 16px 16px', overflow: 'hidden' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                        <thead>
+                          <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                            <th style={thStyle}>Code</th><th style={thStyle}>Course Title</th><th style={thStyle}>Grade</th><th style={thStyle}>Points</th><th style={thStyle}>Score</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(aiData.grades).map(([code, info], j) => (
+                            <tr key={j} style={{ borderBottom: '1px solid #f1f5f9', background: j % 2 === 0 ? 'white' : '#fafbfc' }}>
+                              <td style={tdStyle}><strong style={{ color: '#0A2A66' }}>{code}</strong></td>
+                              <td style={tdStyle}>{info.course_name}</td>
+                              <td style={{ ...tdStyle, textAlign: 'center' }}>
+                                <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, color: getGradeColor(info.grade), background: getGradeBg(info.grade) }}>{info.grade}</span>
+                              </td>
+                              <td style={{ ...tdStyle, textAlign: 'center' }}>{info.points?.toFixed(1)}</td>
+                              <td style={{ ...tdStyle, textAlign: 'center' }}>{info.score?.toFixed(1)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 {/* CGPA Summary Card */}
-                <div style={{ background: 'linear-gradient(135deg, #0A2A66 0%, #1e40af 100%)', borderRadius: '20px', padding: '1.5rem 2rem', marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem', color: 'white' }}>
+                <div style={{ background: transcriptMode === 'ai' ? 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)' : 'linear-gradient(135deg, #0A2A66 0%, #1e40af 100%)', borderRadius: '20px', padding: '1.5rem 2rem', marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem', color: 'white' }}>
                   <div>
-                    <div style={{ fontSize: '0.65rem', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 600, marginBottom: '6px' }}>Cumulative Grade Point Average</div>
+                    <div style={{ fontSize: '0.65rem', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 600, marginBottom: '6px' }}>
+                      {transcriptMode === 'ai' ? 'AI-Calculated CGPA' : 'Cumulative Grade Point Average'}
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.8rem' }}>
                       <span style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'monospace' }}>{cgpa.toFixed(2)}</span>
                       <div><div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#FFC107' }}>{getLetterGrade(cgpa)}</div><div style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 500 }}>{getRemark(cgpa)}</div></div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '2rem', textAlign: 'center' }}>
-                    <div><div style={{ fontSize: '0.6rem', opacity: 0.7, textTransform: 'uppercase', fontWeight: 600 }}>Total Courses</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFC107' }}>{getTotalCourses()}</div></div>
-                    <div><div style={{ fontSize: '0.6rem', opacity: 0.7, textTransform: 'uppercase', fontWeight: 600 }}>Total Credits</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFC107' }}>{getTotalCredits()}</div></div>
+                    <div><div style={{ fontSize: '0.6rem', opacity: 0.7, textTransform: 'uppercase', fontWeight: 600 }}>Total Courses</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFC107' }}>{transcriptMode === 'ai' && aiData ? aiData.total_courses : getTotalCourses()}</div></div>
+                    <div><div style={{ fontSize: '0.6rem', opacity: 0.7, textTransform: 'uppercase', fontWeight: 600 }}>Total Credits</div><div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFC107' }}>{transcriptMode === 'ai' && aiData ? aiData.total_credits : getTotalCredits()}</div></div>
                   </div>
                 </div>
 
@@ -453,7 +605,9 @@ const Transcript = () => {
                 <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '2px solid #0A2A66', textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '4px' }}>
                     <FaShieldAlt style={{ color: '#059669', fontSize: '0.7rem' }} />
-                    <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Official Document | Electronically Generated</span>
+                    <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                      Official Document | {transcriptMode === 'ai' ? 'AI-Enhanced ' : ''}Electronically Generated
+                    </span>
                     {overrideMode && <span style={{ fontSize: '0.68rem', color: '#dc2626', fontWeight: 700, marginLeft: '0.5rem' }}>(Demo Mode)</span>}
                   </div>
                   <p style={{ fontSize: '0.65rem', color: '#94a3b8', margin: '2px 0' }}>This transcript is valid without physical signature. ID: {transcriptId}</p>
@@ -501,6 +655,51 @@ const Transcript = () => {
         </div>
       </FadeIn>
 
+      {/* 🔘 MODE TOGGLE - Normal vs AI */}
+      <div style={{ background: cardBg, borderRadius: '20px', padding: '1.5rem', marginBottom: '1.5rem', border: `1px solid ${border}`, boxShadow: shadowSm }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h3 style={{ color: '#0A2A66', fontSize: '1rem', fontWeight: 700, margin: '0 0 0.3rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {transcriptMode === 'ai' ? <FaRobot style={{ color: '#7c3aed' }} /> : <FaFileAlt style={{ color: '#0A2A66' }} />}
+              Transcript Mode
+            </h3>
+            <p style={{ color: textSec, fontSize: '0.82rem', margin: 0 }}>
+              {transcriptMode === 'ai' 
+                ? 'AI analyzes student performance, identifies strengths/weaknesses, and generates insights.' 
+                : 'Standard transcript with semester-by-semester grades and CGPA calculation.'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', background: cardBgHover, borderRadius: '30px', padding: '4px', border: `1px solid ${border}` }}>
+            <button
+              onClick={() => { setTranscriptMode('normal'); setAiData(null); }}
+              style={{
+                padding: '0.55rem 1.2rem', borderRadius: '26px', border: 'none',
+                background: transcriptMode === 'normal' ? '#0A2A66' : 'transparent',
+                color: transcriptMode === 'normal' ? 'white' : textSec,
+                fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif', transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+              }}
+            >
+              <FaFileAlt /> Normal
+            </button>
+            <button
+              onClick={() => setTranscriptMode('ai')}
+              style={{
+                padding: '0.55rem 1.2rem', borderRadius: '26px', border: 'none',
+                background: transcriptMode === 'ai' ? '#7c3aed' : 'transparent',
+                color: transcriptMode === 'ai' ? 'white' : textSec,
+                fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif', transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+              }}
+            >
+              <FaBrain /> AI Transcript
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Override Mode Toggle */}
       <div style={{ background: overrideMode ? '#fef2f2' : cardBg, borderRadius: '14px', padding: '1rem 1.5rem', marginBottom: '1.5rem', border: `1px solid ${overrideMode ? '#fecaca' : border}`, boxShadow: shadowSm, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -530,24 +729,95 @@ const Transcript = () => {
 
       {/* Student Transcript */}
       <div style={{ background: cardBg, borderRadius: '20px', padding: '1.8rem', marginBottom: '1.5rem', border: `1px solid ${border}`, boxShadow: shadowSm }}>
-        <h2 style={{ color: '#0A2A66', fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FaUserGraduate style={{ color: '#0A2A66' }} /> Student Transcript</h2>
+        <h2 style={{ color: '#0A2A66', fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {transcriptMode === 'ai' ? <FaRobot style={{ color: '#7c3aed' }} /> : <FaUserGraduate style={{ color: '#0A2A66' }} />}
+          {transcriptMode === 'ai' ? 'AI-Powered Transcript' : 'Student Transcript'}
+        </h2>
         <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '1rem' }}>
           <div className="form-group" style={{ flex: 1, minWidth: '180px', marginBottom: 0 }}>
             <label style={{ fontSize: '0.8rem', fontWeight: 600, color: textSec }}>Student ID</label>
-            <input type="text" value={studentId} onChange={e => setStudentId(e.target.value)} placeholder="Enter student ID" onKeyPress={e => e.key === 'Enter' && fetchTranscript()} style={{ borderRadius: '12px' }} />
+            <input type="text" value={studentId} onChange={e => setStudentId(e.target.value)} placeholder="Enter student ID" onKeyPress={e => e.key === 'Enter' && handleFetchData()} style={{ borderRadius: '12px' }} />
           </div>
-          <button className="btn btn-primary" onClick={fetchTranscript} disabled={loading} style={{ height: '44px', borderRadius: '12px' }}>{loading ? <FaSpinner className="animate-spin" /> : <FaSearch />} Retrieve Data</button>
-          <button className="btn btn-outline" onClick={() => { setStudentId(''); setStudentData(null); setStudentName(''); setSearched(false); }} style={{ height: '44px', borderRadius: '12px' }}><FaRedoAlt /> Reset</button>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleFetchData} 
+            disabled={loading || aiLoading} 
+            style={{ height: '44px', borderRadius: '12px', background: transcriptMode === 'ai' ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : undefined }}
+          >
+            {loading || aiLoading ? <FaSpinner className="animate-spin" /> : transcriptMode === 'ai' ? <FaBrain /> : <FaSearch />} 
+            {transcriptMode === 'ai' ? 'Analyze with AI' : 'Retrieve Data'}
+          </button>
+          <button className="btn btn-outline" onClick={() => { setStudentId(''); setStudentData(null); setStudentName(''); setAiData(null); setSearched(false); }} style={{ height: '44px', borderRadius: '12px' }}><FaRedoAlt /> Reset</button>
         </div>
 
-        {studentData && (
+        {/* AI Loading State */}
+        {aiLoading && (
+          <div style={{ textAlign: 'center', padding: '3rem', borderTop: `1px solid ${border}`, marginTop: '1rem' }}>
+            <FaBrain style={{ fontSize: '3rem', color: '#7c3aed', animation: 'pulse 2s infinite' }} />
+            <p style={{ color: '#7c3aed', fontWeight: 600, marginTop: '1rem', fontSize: '1rem' }}>AI is analyzing student data...</p>
+            <p style={{ color: textMuted, fontSize: '0.85rem' }}>Generating insights, strengths, weaknesses, and recommendations.</p>
+          </div>
+        )}
+
+        {/* AI Data Display */}
+        {!aiLoading && aiData && transcriptMode === 'ai' && (
+          <div style={{ borderTop: `1px solid ${border}`, paddingTop: '1.25rem', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+              <h3 style={{ color: '#0A2A66', fontSize: '1rem', fontWeight: 600, margin: 0 }}>
+                Student: {aiData.student_name} ({aiData.student_id})
+              </h3>
+              <button onClick={handleGenerateTranscript} style={{ 
+                padding: '0.7rem 1.5rem', borderRadius: '30px', border: 'none', 
+                background: 'linear-gradient(135deg, #7c3aed, #a855f7)', 
+                color: 'white', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', 
+                gap: '0.5rem', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif', 
+                boxShadow: '0 4px 15px rgba(124,58,237,0.3)' 
+              }}>
+                <FaRobot /> Generate AI Transcript
+              </button>
+            </div>
+
+            {/* AI Preview Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.8rem', marginBottom: '1rem' }}>
+              {[
+                { icon: <FaChartLine />, label: 'CGPA', value: aiData.cgpa?.toFixed(2), color: '#7c3aed', bg: '#f5f3ff' },
+                { icon: <FaBookOpen />, label: 'Total Courses', value: aiData.total_courses, color: '#2563eb', bg: '#eff6ff' },
+                { icon: <FaStar />, label: 'Strengths', value: aiData.strengths?.length || 0, color: '#059669', bg: '#ecfdf5' },
+                { icon: <FaExclamationTriangle />, label: 'Weak Areas', value: aiData.weaknesses?.length || 0, color: '#dc2626', bg: '#fef2f2' },
+                { icon: <FaCheckCircle />, label: 'Cleared Refs', value: aiData.cleared_references, color: '#059669', bg: '#ecfdf5' },
+                { icon: <FaBan />, label: 'Double Fails', value: aiData.double_fails, color: '#be185d', bg: '#fdf2f8' },
+              ].map((stat, i) => (
+                <div key={i} style={{ background: stat.bg, borderRadius: '14px', padding: '1rem', border: `1px solid ${border}` }}>
+                  <div style={{ color: stat.color, fontSize: '1rem', marginBottom: '0.3rem' }}>{stat.icon}</div>
+                  <div style={{ fontSize: '0.65rem', color: textMuted, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>{stat.label}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: stat.color }}>{stat.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* AI Analysis Preview */}
+            {aiData.ai_analysis && (
+              <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '16px', padding: '1.2rem', border: '1px solid #c4b5fd' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <FaBrain style={{ color: '#7c3aed' }} />
+                  <span style={{ fontWeight: 700, color: '#7c3aed', fontSize: '0.9rem' }}>AI Analysis Preview</span>
+                </div>
+                <p style={{ color: '#4c1d95', fontSize: '0.85rem', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>
+                  {aiData.ai_analysis.substring(0, 300)}...
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Normal Mode Student Data */}
+        {!aiLoading && studentData && transcriptMode === 'normal' && (
           <div style={{ borderTop: `1px solid ${border}`, paddingTop: '1.25rem', marginTop: '0.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
               <h3 style={{ color: '#0A2A66', fontSize: '1rem', fontWeight: 600, margin: 0 }}>
                 Student: {studentName} ({studentId})
               </h3>
 
-              {/* Generate Button */}
               {hasDoubleFail ? (
                 <div style={{ padding: '0.7rem 1.2rem', borderRadius: '30px', background: '#fdf2f8', color: '#be185d', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #fbcfe8' }}>
                   <FaBan /> Cannot Generate — Double Fail
@@ -662,7 +932,7 @@ const Transcript = () => {
           </div>
         )}
 
-        {searched && !studentData && !loading && (
+        {searched && !studentData && !aiData && !loading && !aiLoading && (
           <div style={{ textAlign: 'center', padding: '2rem', color: textMuted, marginTop: '1rem', borderTop: `1px solid ${border}` }}>
             <FaUserGraduate style={{ fontSize: '2rem', color: textMuted, marginBottom: '0.5rem' }} />
             <p>No records found for student ID {studentId}</p>

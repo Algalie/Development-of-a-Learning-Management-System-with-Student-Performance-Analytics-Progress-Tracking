@@ -10,7 +10,7 @@ import {
   FaArrowLeft, FaPlus, FaEye, FaPaperPlane, FaUserPlus, FaRedoAlt,
   FaBookOpen, FaArchive, FaCalendarAlt, FaClock, FaUsers, FaSpinner,
   FaCheckCircle, FaTimesCircle, FaPencilAlt, FaChalkboardTeacher,
-  FaCog, FaUserCheck
+  FaCog, FaGraduationCap
 } from 'react-icons/fa';
 
 const MyCourses = () => {
@@ -46,10 +46,11 @@ const MyCourses = () => {
   };
 
   const getStatusBadge = (status) => {
-    if (!status || status === 'draft') return <span className="badge badge-draft"><FaPencilAlt /> Draft</span>;
-    if (status === 'finalized') return <span className="badge badge-approved"><FaCheckCircle /> Finalized</span>;
-    if (status === 'rejected') return <span className="badge badge-rejected"><FaTimesCircle /> Rejected</span>;
-    return <span className="badge badge-pending"><FaClock /> Pending</span>;
+    if (!status || status === 'draft') return { icon: <FaPencilAlt />, text: 'Draft', bg: '#f1f5f9', color: '#64748b' };
+    if (status === 'finalized') return { icon: <FaCheckCircle />, text: 'Finalized', bg: '#f0fdf4', color: '#16a34a' };
+    if (status === 'rejected') return { icon: <FaTimesCircle />, text: 'Rejected', bg: '#fef2f2', color: '#dc2626' };
+    if (status?.startsWith('pending_')) return { icon: <FaClock />, text: 'Pending ' + status.replace('pending_', '').toUpperCase(), bg: '#fefce8', color: '#ca8a04' };
+    return { icon: <FaPencilAlt />, text: 'Draft', bg: '#f1f5f9', color: '#64748b' };
   };
 
   const canCreate = user?.role === 'head_of_department';
@@ -57,7 +58,7 @@ const MyCourses = () => {
 
   if (loading) {
     return (
-      <div className="dashboard-container">
+      <div className="dashboard-container" style={{ maxWidth: '1200px' }}>
         <div style={{ textAlign: 'center', padding: '5rem' }}>
           <FaSpinner className="loading-spinner" />
           <p style={{ color: 'var(--text-secondary)', marginTop: '1rem' }}>Loading courses...</p>
@@ -68,109 +69,147 @@ const MyCourses = () => {
 
   const cardBg = 'var(--card-bg)';
   const border = 'var(--border)';
-  const shadowSm = 'var(--shadow-sm)';
   const textSec = 'var(--text-secondary)';
   const textMuted = 'var(--text-muted)';
   const cardBgHover = 'var(--card-bg-hover)';
 
-  const renderCourseCard = (course, isCreatedOnly = false) => (
-    <motion.div
-      key={course.id}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
-        background: cardBg, borderRadius: '14px', padding: '1.25rem 1.5rem',
-        border: `1px solid ${isCreatedOnly ? '#FFC107' : border}`,
-        boxShadow: shadowSm, display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem',
-        borderLeft: isCreatedOnly ? '4px solid #FFC107' : `1px solid ${border}`,
-      }}
-      whileHover={{ y: -2 }}
-    >
-      <div style={{ flex: 2, minWidth: '250px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.3rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.85rem', color: textMuted, fontWeight: 600, fontFamily: 'monospace' }}>{course.course_code}</span>
-          <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600, background: cardBgHover, color: textSec }}>{course.program_type}</span>
-          {course.course_level && <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600, background: '#f0f4ff', color: '#0A2A66' }}>{course.course_level}</span>}
-          {isCreatedOnly && <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600, background: '#fefce8', color: '#ca8a04' }}>Created by you</span>}
-        </div>
-        <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#0A2A66', marginBottom: '0.5rem' }}>{course.course_name}</h3>
-        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', fontSize: '0.8rem', color: textSec }}>
-          <span><FaCalendarAlt style={{ fontSize: '0.7rem', marginRight: '0.3rem' }} />{course.semester} | {course.academic_year}</span>
-          <span><FaClock style={{ fontSize: '0.7rem', marginRight: '0.3rem' }} />{course.credit_hours} credits</span>
-          <span><FaUsers style={{ fontSize: '0.7rem', marginRight: '0.3rem' }} />{course.students_count || course.students?.length || 0} students</span>
-          {course.assigned_lecturer && (
-            <span style={{ color: isCreatedOnly ? '#ca8a04' : textSec }}>
-              <FaChalkboardTeacher style={{ fontSize: '0.7rem', marginRight: '0.3rem' }} />
-              {course.assigned_lecturer.full_name}
-              {isCreatedOnly && ' (assigned)'}
-            </span>
-          )}
-        </div>
-        <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {getStatusBadge(course.approval_status)}
-          {course.ca_max_score && (
-            <span style={{ fontSize: '0.7rem', color: textMuted }}>CA: {course.ca_max_score}% / Exam: {course.exam_max_score}%</span>
-          )}
-        </div>
-      </div>
-      
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
-        <Link to={`/lecturer/course/${course.id}`}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-            padding: '0.5rem 1rem', borderRadius: '8px',
-            background: cardBgHover, color: '#0A2A66', border: `1px solid ${border}`,
-            textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500,
+  const renderCourseCard = (course, isCreatedOnly = false) => {
+    const status = getStatusBadge(course.approval_status);
+    
+    return (
+      <motion.div
+        key={course.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -4 }}
+        style={{
+          background: cardBg,
+          borderRadius: '16px',
+          padding: '1.5rem',
+          border: `2px solid ${isCreatedOnly ? '#FFC107' : border}`,
+          boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          borderTop: isCreatedOnly ? '4px solid #FFC107' : `2px solid ${border}`,
+        }}
+      >
+        {/* Top Badges */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+          <span style={{ 
+            fontSize: '0.8rem', color: textMuted, fontWeight: 700, 
+            fontFamily: 'monospace', background: cardBgHover,
+            padding: '3px 10px', borderRadius: '6px',
           }}>
-          <FaEye /> View
-        </Link>
-        
-        {!isCreatedOnly && course.is_mine !== false && (
-          <>
-            {(course.approval_status === 'draft' || !course.approval_status) && course.students?.length > 0 && (
-              <button onClick={() => handleSubmit(course.id)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                  padding: '0.5rem 1rem', borderRadius: '8px',
-                  background: '#16a34a', color: 'white', border: 'none',
-                  cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500,
-                  fontFamily: 'Inter, sans-serif',
-                }}>
-                <FaPaperPlane /> Submit
-              </button>
+            {course.course_code}
+          </span>
+          <span style={{
+            padding: '3px 10px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
+            background: status.bg, color: status.color,
+            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+          }}>
+            {status.icon} {status.text}
+          </span>
+        </div>
+
+        {/* Course Name */}
+        <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0A2A66', marginBottom: '0.8rem', lineHeight: 1.4 }}>
+          {course.course_name}
+        </h3>
+
+        {/* Details */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem', flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: textSec }}>
+            <FaCalendarAlt style={{ fontSize: '0.7rem', color: textMuted }} />
+            {course.semester} | {course.academic_year}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: textSec }}>
+            <FaGraduationCap style={{ fontSize: '0.7rem', color: textMuted }} />
+            {course.program_type} | {course.credit_hours} Credits
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: textSec }}>
+            <FaUsers style={{ fontSize: '0.7rem', color: textMuted }} />
+            {course.students_count || course.students?.length || 0} Students
+          </div>
+          {course.assigned_lecturer && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: textSec }}>
+              <FaChalkboardTeacher style={{ fontSize: '0.7rem', color: textMuted }} />
+              {course.assigned_lecturer.full_name}
+            </div>
+          )}
+          {course.course_level && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600, background: '#f0f4ff', color: '#0A2A66' }}>
+                {course.course_level}
+              </span>
+              {course.ca_max_score && (
+                <span style={{ fontSize: '0.7rem', color: textMuted }}>CA: {course.ca_max_score}% / Exam: {course.exam_max_score}%</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div style={{ borderTop: `1px solid ${border}`, paddingTop: '1rem' }}>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Link to={`/lecturer/course/${course.id}`}
+              style={{
+                flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                gap: '0.3rem', padding: '0.5rem', borderRadius: '8px',
+                background: cardBgHover, color: '#0A2A66', border: `1px solid ${border}`,
+                textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600,
+              }}>
+              <FaEye /> View
+            </Link>
+            
+            {!isCreatedOnly && course.is_mine !== false && (
+              <>
+                {(course.approval_status === 'draft' || !course.approval_status) && course.students?.length > 0 && (
+                  <button onClick={() => handleSubmit(course.id)}
+                    style={{
+                      flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      gap: '0.3rem', padding: '0.5rem', borderRadius: '8px',
+                      background: '#16a34a', color: 'white', border: 'none',
+                      cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+                      fontFamily: 'Inter, sans-serif',
+                    }}>
+                    <FaPaperPlane /> Submit
+                  </button>
+                )}
+                {(course.approval_status === 'draft' || !course.approval_status) && (!course.students || course.students.length === 0) && (
+                  <Link to={`/lecturer/course/${course.id}/add-students`}
+                    style={{
+                      flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      gap: '0.3rem', padding: '0.5rem', borderRadius: '8px',
+                      background: '#ca8a04', color: 'white', border: 'none',
+                      textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600,
+                    }}>
+                    <FaUserPlus /> Add Students
+                  </Link>
+                )}
+                {course.approval_status === 'rejected' && (
+                  <button onClick={() => handleSubmit(course.id)}
+                    style={{
+                      flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      gap: '0.3rem', padding: '0.5rem', borderRadius: '8px',
+                      background: '#ca8a04', color: 'white', border: 'none',
+                      cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+                      fontFamily: 'Inter, sans-serif',
+                    }}>
+                    <FaRedoAlt /> Resubmit
+                  </button>
+                )}
+              </>
             )}
-            {(course.approval_status === 'draft' || !course.approval_status) && (!course.students || course.students.length === 0) && (
-              <Link to={`/lecturer/course/${course.id}/add-students`}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                  padding: '0.5rem 1rem', borderRadius: '8px',
-                  background: '#ca8a04', color: 'white', border: 'none',
-                  textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500,
-                }}>
-                <FaUserPlus /> Add Students
-              </Link>
-            )}
-            {course.approval_status === 'rejected' && (
-              <button onClick={() => handleSubmit(course.id)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                  padding: '0.5rem 1rem', borderRadius: '8px',
-                  background: '#ca8a04', color: 'white', border: 'none',
-                  cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500,
-                  fontFamily: 'Inter, sans-serif',
-                }}>
-                <FaRedoAlt /> Resubmit
-              </button>
-            )}
-          </>
-        )}
-      </div>
-    </motion.div>
-  );
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
 
   return (
-    <div className="dashboard-container" style={{ maxWidth: '1100px' }}>
+    <div className="dashboard-container" style={{ maxWidth: '1200px' }}>
       <FadeIn>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
@@ -247,29 +286,52 @@ const MyCourses = () => {
       </div>
 
       <ShakeOnMount>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {activeTab === 'my-courses' && (
-            activeCourses.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '4rem', background: cardBg, borderRadius: '12px', border: `1px solid ${border}`, color: textMuted }}>
-                <FaBookOpen style={{ fontSize: '2.5rem', marginBottom: '1rem' }} />
-                <h3 style={{ color: '#0A2A66', marginBottom: '0.5rem' }}>No Active Courses</h3>
-                <p>{canCreate ? 'Create a course or wait to be assigned one.' : 'No courses have been assigned to you yet.'}</p>
-              </div>
-            ) : activeCourses.map(c => renderCourseCard(c))
-          )}
+        {/* ==================== 3-COLUMN GRID ==================== */}
+        {activeTab === 'my-courses' && (
+          activeCourses.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '4rem', background: cardBg, borderRadius: '12px', border: `2px solid ${border}`, color: textMuted }}>
+              <FaBookOpen style={{ fontSize: '2.5rem', marginBottom: '1rem' }} />
+              <h3 style={{ color: '#0A2A66', marginBottom: '0.5rem' }}>No Active Courses</h3>
+              <p>{canCreate ? 'Create a course or wait to be assigned one.' : 'No courses have been assigned to you yet.'}</p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '1.2rem',
+            }}>
+              {activeCourses.map(c => renderCourseCard(c))}
+            </div>
+          )
+        )}
 
-          {activeTab === 'created' && createdCourses.map(c => renderCourseCard(c, true))}
+        {activeTab === 'created' && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '1.2rem',
+          }}>
+            {createdCourses.map(c => renderCourseCard(c, true))}
+          </div>
+        )}
 
-          {activeTab === 'archived' && (
-            archivedCourses.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '4rem', background: cardBg, borderRadius: '12px', border: `1px solid ${border}`, color: textMuted }}>
-                <FaArchive style={{ fontSize: '2.5rem', marginBottom: '1rem' }} />
-                <h3 style={{ color: '#0A2A66', marginBottom: '0.5rem' }}>No Archived Courses</h3>
-                <p>Archived courses will appear here.</p>
-              </div>
-            ) : archivedCourses.map(c => renderCourseCard(c))
-          )}
-        </div>
+        {activeTab === 'archived' && (
+          archivedCourses.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '4rem', background: cardBg, borderRadius: '12px', border: `2px solid ${border}`, color: textMuted }}>
+              <FaArchive style={{ fontSize: '2.5rem', marginBottom: '1rem' }} />
+              <h3 style={{ color: '#0A2A66', marginBottom: '0.5rem' }}>No Archived Courses</h3>
+              <p>Archived courses will appear here.</p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '1.2rem',
+            }}>
+              {archivedCourses.map(c => renderCourseCard(c))}
+            </div>
+          )
+        )}
       </ShakeOnMount>
     </div>
   );
